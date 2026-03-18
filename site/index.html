@@ -1,751 +1,886 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="scroll-smooth">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Каркас над пропастью: строю дом на болоте — Юрий Подымахин</title>
-  <meta name="description" content="Практическое руководство по строительству каркасного дома на торфяном грунте. 1200 фотографий реальной стройки. Автор — Юрий Подымахин.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Каркас над пропастью: строю дом на болоте — книга Юрия Подымахина о строительстве каркасного дома на сложном грунте. Реальный опыт, технические решения, честная история.">
+<meta name="author" content="Юрий Подымахин">
+<title>Каркас над пропастью: строю дом на болоте — Юрий Подымахин</title>
 
-  <!-- Preconnect -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-  <!-- Google Fonts: Merriweather + Inter -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Merriweather:wght@700;900&display=swap" rel="stylesheet">
-
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: { DEFAULT: '#5B6F3C', light: '#8FA76A', dark: '#3D4E28' },
-            secondary: { DEFAULT: '#A67C52', light: '#C9A87C', dark: '#7A5A39' },
-            accent: { DEFAULT: '#B8482A', light: '#D4785E', dark: '#9A3A20' },
-            snow: '#F5F2ED',
-            parchment: '#EAE4D9',
-            peat: '#2C2A25',
-            frost: '#D1CCC3',
-            charcoal: '#2C2A25',
-            'warm-gray': '#6B645A',
-            stone: '#9B9488',
-            info: '#4A7C8A',
-            warning: '#D4A43A',
-          },
-          fontFamily: {
-            heading: ['Merriweather', 'Georgia', 'Times New Roman', 'serif'],
-            body: ['Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
-          },
-          maxWidth: {
-            content: '1200px',
-            prose: '680px',
-          },
-          borderRadius: {
-            card: '12px',
-            button: '8px',
-          },
-          boxShadow: {
-            card: '0 1px 3px rgba(44, 42, 37, 0.06)',
-            'card-hover': '0 4px 16px rgba(44, 42, 37, 0.1)',
-            btn: '0 2px 8px rgba(184, 72, 42, 0.25)',
-            'btn-hover': '0 4px 12px rgba(184, 72, 42, 0.35)',
-          },
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        swamp: {
+          50: '#f4f6ee',
+          100: '#e6ebd6',
+          200: '#cfd8b1',
+          300: '#b1c083',
+          400: '#95a85e',
+          500: '#6B7B3A',
+          600: '#586832',
+          700: '#445028',
+          800: '#374122',
+          900: '#2d361e',
+          950: '#161c0d',
+        },
+        earth: {
+          50: '#faf6f1',
+          100: '#f0e6d6',
+          200: '#e0ccab',
+          300: '#cdab79',
+          400: '#be9050',
+          500: '#A67B3D',
+          600: '#8f6432',
+          700: '#774d2b',
+          800: '#624029',
+          900: '#523725',
+          950: '#2e1b12',
+        },
+        fog: {
+          50: '#f5f7fa',
+          100: '#ebeef3',
+          200: '#d3dae5',
+          300: '#acbacf',
+          400: '#8096b4',
+          500: '#607a9c',
+          600: '#4c6282',
+          700: '#3e506a',
+          800: '#364559',
+          900: '#303b4c',
+          950: '#202732',
+        },
+        warm: {
+          50: '#fefcf3',
+          100: '#fdf6de',
+          200: '#faeabc',
+          300: '#f6d98f',
+          400: '#f1c25f',
+          500: '#eda83a',
+          600: '#de8f27',
+          700: '#b87020',
+          800: '#945922',
+          900: '#7a4a1f',
+          950: '#42250e',
         },
       },
-    }
-  </script>
+      fontFamily: {
+        heading: ['Playfair Display', 'Georgia', 'Times New Roman', 'serif'],
+        body: ['Montserrat', 'Arial', 'Helvetica', 'sans-serif'],
+      },
+    },
+  },
+}
+</script>
 
-  <style>
-    html { scroll-behavior: smooth; }
-    body { font-family: 'Inter', sans-serif; color: #2C2A25; background: #F5F2ED; }
-    h1, h2, h3, h4 { font-family: 'Merriweather', Georgia, serif; }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
-    .fade-in {
-      opacity: 0;
-      transform: translateY(32px);
-      transition: opacity 0.7s ease-out, transform 0.7s ease-out;
-    }
-    .fade-in.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
+<style>
+  /* Skip to content */
+  .skip-link {
+    position: absolute;
+    top: -100%;
+    left: 0;
+    z-index: 9999;
+    padding: 0.5rem 1rem;
+    background: #6B7B3A;
+    color: white;
+    font-weight: 600;
+  }
+  .skip-link:focus {
+    top: 0;
+  }
 
-    /* 3D Book */
-    .book-3d { perspective: 1000px; }
-    .book-3d .book-cover {
-      width: 240px;
-      height: 340px;
-      background: linear-gradient(145deg, #4A5D2E 0%, #3D4E28 50%, #2C3A1A 100%);
-      border-radius: 4px 12px 12px 4px;
-      transform: rotateY(-18deg) rotateX(2deg);
-      box-shadow: -6px 6px 24px rgba(0,0,0,0.4), inset 0 0 0 2px rgba(255,255,255,0.06);
-      transition: transform 0.5s ease;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 24px;
-      text-align: center;
-    }
-    .book-3d:hover .book-cover {
-      transform: rotateY(-8deg) rotateX(1deg);
-    }
-    .book-cover::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 8px;
-      bottom: 8px;
-      width: 4px;
-      background: linear-gradient(to right, rgba(0,0,0,0.3), transparent);
-      border-radius: 2px 0 0 2px;
-    }
-    .book-cover .spine {
-      position: absolute;
-      left: -18px;
-      top: 4px;
-      bottom: 4px;
-      width: 20px;
-      background: linear-gradient(to right, #1E2912, #2C3A1A);
-      border-radius: 4px 0 0 4px;
-      transform: rotateY(60deg);
-      transform-origin: right center;
-      box-shadow: inset -2px 0 6px rgba(0,0,0,0.3);
-    }
-    .book-cover .book-edge {
-      position: absolute;
-      right: -3px;
-      top: 6px;
-      bottom: 6px;
-      width: 6px;
-      background: linear-gradient(to right, #d4cbb8, #e8e0d0, #d4cbb8);
-      border-radius: 0 2px 2px 0;
-    }
+  /* Scroll animations */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+  }
+  .fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
 
-    /* FAQ */
-    .faq-answer {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.4s ease;
-    }
-    .faq-answer.open { max-height: 500px; }
-    .faq-toggle svg { transition: transform 0.3s ease; }
-    .faq-toggle.active svg { transform: rotate(180deg); }
+  /* 3D Book */
+  .book-container {
+    perspective: 1200px;
+  }
+  .book {
+    width: 260px;
+    height: 380px;
+    position: relative;
+    transform-style: preserve-3d;
+    transform: rotateY(-25deg);
+    transition: transform 0.6s ease;
+  }
+  .book:hover {
+    transform: rotateY(-10deg);
+  }
+  .book-front {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 0 4px 4px 0;
+    box-shadow: 5px 5px 20px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
+  .book-spine {
+    position: absolute;
+    width: 40px;
+    height: 100%;
+    left: -40px;
+    background: linear-gradient(to right, #3a4d1e, #4a5e28);
+    transform: rotateY(-90deg);
+    transform-origin: right center;
+    border-radius: 4px 0 0 4px;
+  }
+  .book-shadow {
+    position: absolute;
+    bottom: -20px;
+    left: -10px;
+    width: 120%;
+    height: 20px;
+    background: radial-gradient(ellipse, rgba(0,0,0,0.25) 0%, transparent 70%);
+    filter: blur(5px);
+  }
 
-    @media (max-width: 640px) {
-      .book-3d .book-cover { width: 180px; height: 260px; padding: 16px; }
-      .book-cover .spine { left: -14px; width: 16px; }
-    }
-  </style>
+  /* Parallax */
+  .parallax-bg {
+    will-change: transform;
+  }
+
+  /* FAQ Accordion */
+  .faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.4s ease;
+  }
+  .faq-answer.open {
+    max-height: 500px;
+  }
+  .faq-chevron {
+    transition: transform 0.3s ease;
+  }
+  .faq-chevron.open {
+    transform: rotate(180deg);
+  }
+
+  /* Nav */
+  .nav-scrolled {
+    background: rgba(22, 28, 13, 0.95) !important;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 20px rgba(0,0,0,0.2);
+  }
+
+  /* Print */
+  @media print {
+    nav, .no-print { display: none !important; }
+    .fade-up { opacity: 1 !important; transform: none !important; }
+    body { color: #000 !important; background: #fff !important; }
+    section { break-inside: avoid; }
+    a[href]:after { content: " (" attr(href) ")"; font-size: 0.8em; }
+  }
+
+  /* Gradient dividers */
+  .section-divider {
+    height: 4px;
+    background: linear-gradient(to right, transparent, #6B7B3A, transparent);
+  }
+
+  /* Card hover */
+  .card-hover {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+  }
+
+  /* Button pulse */
+  .btn-pulse {
+    animation: pulse-glow 2s infinite;
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(107,123,58,0.4); }
+    50% { box-shadow: 0 0 0 12px rgba(107,123,58,0); }
+  }
+
+  /* Focus styles */
+  *:focus-visible {
+    outline: 3px solid #6B7B3A;
+    outline-offset: 2px;
+  }
+</style>
 </head>
-<body>
 
-  <!-- ===== NAVIGATION ===== -->
-  <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 bg-snow/90 backdrop-blur-md border-b border-frost transition-shadow duration-300">
-    <div class="max-w-content mx-auto px-6 lg:px-12 flex items-center justify-between h-16">
-      <a href="#hero" class="font-heading font-bold text-lg text-primary-dark whitespace-nowrap">Каркас над пропастью</a>
-      <div class="hidden md:flex items-center gap-6 text-sm font-semibold text-warm-gray">
-        <a href="#problem" class="hover:text-primary transition-colors">Вызов</a>
-        <a href="#solution" class="hover:text-primary transition-colors">Книга</a>
-        <a href="#author" class="hover:text-primary transition-colors">Автор</a>
-        <a href="#audience" class="hover:text-primary transition-colors">Для кого</a>
-        <a href="#chapters" class="hover:text-primary transition-colors">Главы</a>
-        <a href="#proof" class="hover:text-primary transition-colors">Признание</a>
-        <a href="#faq" class="hover:text-primary transition-colors">FAQ</a>
-        <a href="https://podymakhin.ru" target="_blank" rel="noopener" class="inline-block bg-accent text-snow px-5 py-2 rounded-button font-bold text-sm shadow-btn hover:bg-accent-light hover:shadow-btn-hover transition-all duration-200 hover:-translate-y-px">Получить книгу</a>
+<body class="font-body text-fog-900 bg-fog-50 antialiased">
+
+<!-- Skip to content -->
+<a href="#main" class="skip-link">Перейти к содержанию</a>
+
+<!-- Navigation -->
+<nav id="navbar" class="fixed top-0 left-0 right-0 z-50 bg-transparent transition-all duration-300" role="navigation" aria-label="Основная навигация">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16 md:h-20">
+      <a href="#hero" class="font-heading font-bold text-white text-lg md:text-xl tracking-tight" aria-label="На главную">
+        КАРКАС<span class="text-swamp-400">.</span>КНИГА
+      </a>
+      <div class="hidden md:flex items-center space-x-6 text-sm text-white/80">
+        <a href="#problem" class="hover:text-swamp-300 transition-colors">Проблема</a>
+        <a href="#solution" class="hover:text-swamp-300 transition-colors">О книге</a>
+        <a href="#author" class="hover:text-swamp-300 transition-colors">Автор</a>
+        <a href="#audience" class="hover:text-swamp-300 transition-colors">Для кого</a>
+        <a href="#chapters" class="hover:text-swamp-300 transition-colors">Главы</a>
+        <a href="#social-proof" class="hover:text-swamp-300 transition-colors">Отзывы</a>
+        <a href="#faq" class="hover:text-swamp-300 transition-colors">FAQ</a>
       </div>
-      <button id="mobile-menu-btn" class="md:hidden p-2 text-charcoal" aria-label="Открыть меню">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      <a href="https://podymakhin.ru" target="_blank" rel="noopener noreferrer" class="hidden md:inline-block bg-swamp-500 hover:bg-swamp-600 text-white font-semibold px-5 py-2 rounded-lg transition-colors text-sm">
+        Купить книгу
+      </a>
+      <button id="mobile-menu-btn" class="md:hidden text-white p-2" aria-label="Открыть меню" aria-expanded="false">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
     </div>
-    <div id="mobile-menu" class="md:hidden hidden bg-snow border-t border-frost px-6 pb-4">
-      <div class="flex flex-col gap-3 text-sm font-semibold text-warm-gray pt-3">
-        <a href="#problem" class="hover:text-primary">Вызов</a>
-        <a href="#solution" class="hover:text-primary">Книга</a>
-        <a href="#author" class="hover:text-primary">Автор</a>
-        <a href="#audience" class="hover:text-primary">Для кого</a>
-        <a href="#chapters" class="hover:text-primary">Главы</a>
-        <a href="#proof" class="hover:text-primary">Признание</a>
-        <a href="#faq" class="hover:text-primary">FAQ</a>
-        <a href="https://podymakhin.ru" target="_blank" rel="noopener" class="inline-block bg-accent text-snow px-5 py-2 rounded-button font-bold text-sm text-center shadow-btn mt-1">Получить книгу</a>
-      </div>
+  </div>
+  <!-- Mobile menu -->
+  <div id="mobile-menu" class="md:hidden hidden bg-swamp-950/95 backdrop-blur-md">
+    <div class="px-4 py-4 space-y-3">
+      <a href="#problem" class="block text-white/80 hover:text-white py-2">Проблема</a>
+      <a href="#solution" class="block text-white/80 hover:text-white py-2">О книге</a>
+      <a href="#author" class="block text-white/80 hover:text-white py-2">Автор</a>
+      <a href="#audience" class="block text-white/80 hover:text-white py-2">Для кого</a>
+      <a href="#chapters" class="block text-white/80 hover:text-white py-2">Главы</a>
+      <a href="#social-proof" class="block text-white/80 hover:text-white py-2">Отзывы</a>
+      <a href="#faq" class="block text-white/80 hover:text-white py-2">FAQ</a>
+      <a href="https://podymakhin.ru" target="_blank" rel="noopener noreferrer" class="block bg-swamp-500 text-white text-center font-semibold px-5 py-3 rounded-lg mt-2">Купить книгу</a>
     </div>
-  </nav>
+  </div>
+</nav>
 
-  <!-- ===== HERO ===== -->
-  <section id="hero" class="relative min-h-screen flex items-center overflow-hidden" style="background: linear-gradient(135deg, #3D4E28 0%, #5B6F3C 40%, #4A5D3A 70%, #2C2A25 100%);">
-    <div class="absolute inset-0 opacity-[0.04]" style="background-image: linear-gradient(rgba(255,255,255,.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.5) 1px, transparent 1px); background-size: 48px 48px;"></div>
-    <div class="relative z-10 max-w-content mx-auto px-6 lg:px-12 py-32 w-full">
-      <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-        <!-- Text -->
-        <div class="lg:w-3/5 text-center lg:text-left">
-          <p class="text-primary-light font-semibold text-sm tracking-widest uppercase mb-4">Юрий Подымахин</p>
-          <h1 class="font-heading font-black text-3xl sm:text-4xl lg:text-5xl text-snow leading-tight tracking-tight mb-6" style="letter-spacing: -0.02em;">
-            Один человек. Болото.<br class="hidden sm:block"> И&nbsp;дом, который стоит.
-          </h1>
-          <p class="text-lg lg:text-xl text-snow/80 max-w-prose mb-4 leading-relaxed">
-            Практическое руководство по строительству каркасного дома на торфяном грунте&nbsp;&mdash; от&nbsp;фундамента до&nbsp;конька. Без бригад, без переплат, без иллюзий.
-          </p>
-          <p class="text-base text-snow/60 max-w-prose mb-8 leading-relaxed">
-            Юрий Подымахин построил каркасный дом в&nbsp;одиночку на&nbsp;бывших торфоразработках&nbsp;&mdash; и&nbsp;задокументировал каждый шаг в&nbsp;1&nbsp;200&nbsp;фотографиях. Это не&nbsp;теория из&nbsp;учебника. Это грязь под ногтями, реальные ошибки и&nbsp;честные решения.
-          </p>
-          <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-            <a href="https://podymakhin.ru" target="_blank" rel="noopener" class="inline-block bg-accent text-snow px-8 py-3.5 rounded-button font-bold text-base shadow-btn hover:bg-accent-light hover:shadow-btn-hover transition-all duration-200 hover:-translate-y-px text-center">Получить книгу</a>
-            <a href="#solution" class="inline-block border-2 border-snow/40 text-snow px-8 py-3.5 rounded-button font-bold text-base hover:bg-snow/10 transition-all duration-200 text-center">Что внутри</a>
-          </div>
-        </div>
-        <!-- 3D Book Mockup -->
-        <div class="lg:w-2/5 flex justify-center">
-          <div class="book-3d">
-            <div class="book-cover">
-              <div class="spine"></div>
-              <div class="book-edge"></div>
-              <p class="text-snow/80 text-xs font-body font-semibold tracking-widest uppercase mb-4">Юрий ПОДЫМАХИН</p>
-              <p class="text-snow font-heading font-bold text-base sm:text-lg leading-snug mb-1">КАРКАС</p>
-              <p class="text-snow font-heading font-bold text-base sm:text-lg leading-snug mb-2">НАД ПРОПАСТЬЮ:</p>
-              <p class="text-snow/70 font-body text-sm italic leading-snug">строю дом<br>на болоте</p>
-              <div class="absolute bottom-5 left-0 right-0 text-snow/35 text-[10px] font-body">~1 200 фото</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- Scroll cue -->
-    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce text-snow/50">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-    </div>
-  </section>
+<main id="main">
 
-  <!-- ===== PROBLEM ===== -->
-  <section id="problem" class="bg-parchment py-20 lg:py-28">
-    <div class="max-w-content mx-auto px-6 lg:px-12">
-      <div class="text-center mb-14 fade-in">
-        <h2 class="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl text-charcoal mb-4">Почему стройка на&nbsp;болоте&nbsp;&mdash; это вызов</h2>
-        <p class="text-warm-gray text-lg max-w-prose mx-auto">Четыре причины, из-за которых люди откладывают стройку на&nbsp;годы.</p>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Pain 1 -->
-        <div class="fade-in bg-snow border border-frost rounded-card p-6 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
-          <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21c-1.5-1.5-6-5.5-6-10a6 6 0 1112 0c0 4.5-4.5 8.5-6 10z"/><path stroke-linecap="round" d="M9 11c0 .5.5 1.5 3 3 2.5-1.5 3-2.5 3-3"/><path stroke-linecap="round" d="M3 17s2 2 4 2m10-2s2 2 4 2"/></svg>
-          </div>
-          <h3 class="font-heading font-bold text-lg text-charcoal mb-2">Грунт, которому нельзя доверять</h3>
-          <p class="text-warm-gray text-sm leading-relaxed">Торф&nbsp;&mdash; это не&nbsp;земля. Он&nbsp;сжимается, плывёт, проседает. Стандартные фундаменты на&nbsp;нём не&nbsp;работают, а&nbsp;большинство строителей просто откажутся браться за&nbsp;такой участок. Или возьмутся&nbsp;&mdash; и&nbsp;сделают так, что через три года дом &laquo;поведёт&raquo;.</p>
-        </div>
-        <!-- Pain 2 -->
-        <div class="fade-in bg-snow border border-frost rounded-card p-6 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
-          <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          </div>
-          <h3 class="font-heading font-bold text-lg text-charcoal mb-2">Смета, которая пухнет на&nbsp;глазах</h3>
-          <p class="text-warm-gray text-sm leading-relaxed">Каждый подрядчик говорит: &laquo;На&nbsp;болоте&nbsp;&mdash; дороже&raquo;. Свайный фундамент, дренаж, усиление&nbsp;&mdash; цифры множатся. А&nbsp;где заканчивается необходимость и&nbsp;начинается навязывание лишнего&nbsp;&mdash; непонятно.</p>
-        </div>
-        <!-- Pain 3 -->
-        <div class="fade-in bg-snow border border-frost rounded-card p-6 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
-          <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M12 18h.01"/><circle cx="12" cy="12" r="10" stroke-linecap="round"/></svg>
-          </div>
-          <h3 class="font-heading font-bold text-lg text-charcoal mb-2">Противоречивая информация</h3>
-          <p class="text-warm-gray text-sm leading-relaxed">Один форум советует одно, другой&nbsp;&mdash; противоположное. СНиПы написаны для инженеров, а&nbsp;не&nbsp;для человека с&nbsp;шуруповёртом. Нет единого источника, который бы провёл от начала до конца именно по болотистому грунту.</p>
-        </div>
-        <!-- Pain 4 -->
-        <div class="fade-in bg-snow border border-frost rounded-card p-6 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
-          <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
-          </div>
-          <h3 class="font-heading font-bold text-lg text-charcoal mb-2">Страх необратимой ошибки</h3>
-          <p class="text-warm-gray text-sm leading-relaxed">Фундамент не&nbsp;переделаешь. Дренаж не&nbsp;перекопаешь по-быстрому. Цена ошибки на&nbsp;сложном грунте&nbsp;&mdash; не&nbsp;испорченная доска, а&nbsp;треснувшая стена через пять лет. И&nbsp;это парализует.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+<!-- ==================== HERO ==================== -->
+<section id="hero" class="relative min-h-screen flex items-center overflow-hidden">
+  <!-- Background -->
+  <div class="parallax-bg absolute inset-0 bg-gradient-to-br from-swamp-950 via-fog-950 to-swamp-900" aria-hidden="true">
+    <!-- Fog/mist effect -->
+    <div class="absolute inset-0 opacity-20" style="background: radial-gradient(ellipse at 30% 80%, rgba(107,123,58,0.3) 0%, transparent 60%), radial-gradient(ellipse at 70% 20%, rgba(172,186,207,0.2) 0%, transparent 50%);"></div>
+    <!-- Tree silhouettes suggestion -->
+    <div class="absolute bottom-0 left-0 right-0 h-48 opacity-10" style="background: repeating-linear-gradient(90deg, transparent, transparent 60px, #2d361e 60px, #2d361e 64px, transparent 64px, transparent 120px);"></div>
+  </div>
 
-  <!-- ===== SOLUTION ===== -->
-  <section id="solution" class="bg-snow py-20 lg:py-28">
-    <div class="max-w-content mx-auto px-6 lg:px-12">
-      <div class="text-center mb-14 fade-in">
-        <h2 class="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl text-charcoal mb-4">Что внутри книги</h2>
-        <p class="text-warm-gray text-lg max-w-prose mx-auto">Проверенные решения, задокументированные на&nbsp;каждом шаге.</p>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-        <!-- 1 -->
-        <div class="fade-in flex gap-4 items-start bg-parchment/50 border border-frost rounded-card p-6">
-          <span class="flex-shrink-0 w-14 h-14 bg-primary text-snow font-heading font-bold text-lg flex items-center justify-center rounded-full shadow-sm">1200</span>
-          <div>
-            <h3 class="font-heading font-bold text-base text-charcoal mb-1">Фотографий и чертежей</h3>
-            <p class="text-warm-gray text-sm leading-relaxed">Каждый этап задокументирован так, что можно повторить, даже если ты видишь стройку впервые.</p>
-          </div>
-        </div>
-        <!-- 2 -->
-        <div class="fade-in flex gap-4 items-start bg-parchment/50 border border-frost rounded-card p-6">
-          <span class="flex-shrink-0 w-14 h-14 bg-primary text-snow font-heading font-bold text-lg flex items-center justify-center rounded-full shadow-sm">А-Я</span>
-          <div>
-            <h3 class="font-heading font-bold text-base text-charcoal mb-1">Фундамент на торфе</h3>
-            <p class="text-warm-gray text-sm leading-relaxed">Какой тип выбрать, как рассчитать, как не&nbsp;переплатить за&nbsp;избыточную конструкцию.</p>
-          </div>
-        </div>
-        <!-- 3 -->
-        <div class="fade-in flex gap-4 items-start bg-parchment/50 border border-frost rounded-card p-6">
-          <span class="flex-shrink-0 w-14 h-14 bg-primary text-snow font-heading font-bold text-base flex items-center justify-center rounded-full shadow-sm">220K</span>
-          <div>
-            <h3 class="font-heading font-bold text-base text-charcoal mb-1">Дренажная система</h3>
-            <p class="text-warm-gray text-sm leading-relaxed">Видео набрало 220&nbsp;000+ просмотров на&nbsp;FORUMHOUSE. Пошагово, с&nbsp;разбором ошибок.</p>
-          </div>
-        </div>
-        <!-- 4 -->
-        <div class="fade-in flex gap-4 items-start bg-parchment/50 border border-frost rounded-card p-6">
-          <span class="flex-shrink-0 w-14 h-14 bg-primary text-snow font-heading font-bold text-xl flex items-center justify-center rounded-full shadow-sm">1</span>
-          <div>
-            <h3 class="font-heading font-bold text-base text-charcoal mb-1">Каркас &laquo;платформа&raquo;</h3>
-            <p class="text-warm-gray text-sm leading-relaxed">Почему именно эта технология, и&nbsp;как собрать каркас в&nbsp;одиночку без помощников.</p>
-          </div>
-        </div>
-        <!-- 5 -->
-        <div class="fade-in flex gap-4 items-start bg-parchment/50 border border-frost rounded-card p-6">
-          <span class="flex-shrink-0 w-14 h-14 bg-accent text-snow font-heading font-bold text-xl flex items-center justify-center rounded-full shadow-sm">!</span>
-          <div>
-            <h3 class="font-heading font-bold text-base text-charcoal mb-1">Реальные ошибки</h3>
-            <p class="text-warm-gray text-sm leading-relaxed">Автор не&nbsp;прячет косяки, а&nbsp;показывает с&nbsp;фотодоказательствами, как их&nbsp;исправил.</p>
-          </div>
-        </div>
-        <!-- 6 -->
-        <div class="fade-in flex gap-4 items-start bg-parchment/50 border border-frost rounded-card p-6">
-          <span class="flex-shrink-0 w-14 h-14 bg-primary text-snow font-heading font-bold text-xl flex items-center justify-center rounded-full shadow-sm">&#8381;</span>
-          <div>
-            <h3 class="font-heading font-bold text-base text-charcoal mb-1">Экономия без потери качества</h3>
-            <p class="text-warm-gray text-sm leading-relaxed">Где можно использовать б/у материал, а&nbsp;где экономить нельзя.</p>
-          </div>
-        </div>
-        <!-- 7 -->
-        <div class="fade-in flex gap-4 items-start bg-parchment/50 border border-frost rounded-card p-6 sm:col-span-2 lg:col-span-1">
-          <span class="flex-shrink-0 w-14 h-14 bg-primary text-snow font-heading font-bold text-sm flex items-center justify-center rounded-full shadow-sm">СНиП</span>
-          <div>
-            <h3 class="font-heading font-bold text-base text-charcoal mb-1">Ссылки на СНиПы и нормативы</h3>
-            <p class="text-warm-gray text-sm leading-relaxed">Для тех, кто хочет понимать, почему делается именно так.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== ABOUT AUTHOR ===== -->
-  <section id="author" class="bg-parchment py-20 lg:py-28">
-    <div class="max-w-content mx-auto px-6 lg:px-12">
-      <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-        <!-- Photo placeholder -->
-        <div class="fade-in lg:w-2/5 flex justify-center">
-          <div class="w-64 h-80 lg:w-72 lg:h-96 bg-frost/60 rounded-lg flex items-center justify-center border border-frost overflow-hidden">
-            <div class="text-center text-stone px-4">
-              <svg class="w-16 h-16 mx-auto mb-3 text-stone/60" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
-              <p class="text-sm">Фото автора на стройке</p>
-            </div>
-          </div>
-        </div>
-        <!-- Bio -->
-        <div class="fade-in lg:w-3/5">
-          <h2 class="font-heading font-bold text-2xl sm:text-3xl text-charcoal mb-6">Юрий Подымахин&nbsp;&mdash; строитель-практик, а&nbsp;не&nbsp;теоретик</h2>
-          <div class="space-y-4 text-warm-gray leading-relaxed">
-            <p>Юрий родился в&nbsp;1967&nbsp;году в&nbsp;Реутове Московской области. Два высших образования&nbsp;&mdash; МЭИ и&nbsp;УРАО. Столярное дело освоил ещё в&nbsp;школе, получив удостоверение столяра 2-го разряда. Но&nbsp;главное&nbsp;&mdash; он&nbsp;построил свой каркасный дом на&nbsp;бывших торфоразработках <strong class="text-charcoal">полностью в&nbsp;одиночку</strong>. Не&nbsp;по&nbsp;заказу клиента. Для своей семьи. На&nbsp;своём болоте.</p>
-            <p>Юрий&nbsp;&mdash; не&nbsp;блогер, который снимает чужие стройки. Он&nbsp;&mdash; автор журнала &laquo;Дом&raquo;, лауреат премии <strong class="text-charcoal">&laquo;Лучший автор&raquo;</strong> в&nbsp;2009, 2010, 2011, 2013 и&nbsp;2014&nbsp;годах. Его статьи и&nbsp;видео читают и&nbsp;смотрят сотни тысяч людей, потому что за&nbsp;каждым советом стоит личный опыт&nbsp;&mdash; со&nbsp;всеми шишками, мозолями и&nbsp;переделками.</p>
-            <p>Эта книга появилась, потому что Юрий устал отвечать на&nbsp;одни и&nbsp;те&nbsp;же вопросы по&nbsp;отдельности. Он&nbsp;собрал всё в&nbsp;одном месте: что получилось, что не&nbsp;получилось, и&nbsp;почему он&nbsp;сделал&nbsp;бы некоторые вещи иначе. Каждая глава&nbsp;&mdash; это самостоятельная статья, которую можно открыть в&nbsp;нужный момент прямо на&nbsp;стройке.</p>
-          </div>
-          <blockquote class="mt-6 border-l-4 border-primary pl-5 italic text-charcoal font-heading text-lg">&laquo;Делай хорошо&nbsp;&mdash; плохо само получится!&raquo;</blockquote>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== TARGET AUDIENCE ===== -->
-  <section id="audience" class="bg-snow py-20 lg:py-28">
-    <div class="max-w-content mx-auto px-6 lg:px-12">
-      <div class="text-center mb-14 fade-in">
-        <h2 class="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl text-charcoal mb-4">Для кого эта книга</h2>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto">
-        <!-- Persona 1 -->
-        <div class="fade-in bg-parchment/50 border border-frost rounded-card p-6 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
-          <div class="w-10 h-10 bg-secondary/20 rounded-full flex items-center justify-center mb-3">
-            <svg class="w-5 h-5 text-secondary-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.049.58.025 1.193-.14 1.743"/></svg>
-          </div>
-          <h3 class="font-heading font-bold text-lg text-charcoal mb-2">Самостройщик на&nbsp;сложном грунте</h3>
-          <p class="text-warm-gray text-sm leading-relaxed">У&nbsp;тебя участок на&nbsp;болоте, торфянике или в&nbsp;низине. Подрядчики заламывают цену или отказываются. Ты&nbsp;решил строить сам&nbsp;&mdash; но&nbsp;тебе нужна проверенная дорожная карта, а&nbsp;не&nbsp;сборник советов с&nbsp;форумов.</p>
-        </div>
-        <!-- Persona 2 -->
-        <div class="fade-in bg-parchment/50 border border-frost rounded-card p-6 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
-          <div class="w-10 h-10 bg-secondary/20 rounded-full flex items-center justify-center mb-3">
-            <svg class="w-5 h-5 text-secondary-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"/></svg>
-          </div>
-          <h3 class="font-heading font-bold text-lg text-charcoal mb-2">Тот, кто считает деньги</h3>
-          <p class="text-warm-gray text-sm leading-relaxed">Ты&nbsp;не&nbsp;готов платить втрое за&nbsp;то, что можно сделать самому при правильном подходе. Тебе важно понимать, где экономия разумна, а&nbsp;где она обернётся переделкой. Эта книга&nbsp;&mdash; про стройку без лишних расходов, но&nbsp;с&nbsp;головой.</p>
-        </div>
-        <!-- Persona 3 -->
-        <div class="fade-in bg-parchment/50 border border-frost rounded-card p-6 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
-          <div class="w-10 h-10 bg-secondary/20 rounded-full flex items-center justify-center mb-3">
-            <svg class="w-5 h-5 text-secondary-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342"/></svg>
-          </div>
-          <h3 class="font-heading font-bold text-lg text-charcoal mb-2">Начинающий строитель</h3>
-          <p class="text-warm-gray text-sm leading-relaxed">Ты&nbsp;держал в&nbsp;руках шуруповёрт, но&nbsp;дом ещё не&nbsp;строил. Тебе нужен не&nbsp;учебник по&nbsp;сопромату, а&nbsp;понятное руководство с&nbsp;фотографиями&nbsp;&mdash; &laquo;вот так правильно, вот так неправильно, вот почему&raquo;.</p>
-        </div>
-        <!-- Persona 4 -->
-        <div class="fade-in bg-parchment/50 border border-frost rounded-card p-6 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
-          <div class="w-10 h-10 bg-secondary/20 rounded-full flex items-center justify-center mb-3">
-            <svg class="w-5 h-5 text-secondary-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-          </div>
-          <h3 class="font-heading font-bold text-lg text-charcoal mb-2">Тот, кто контролирует бригаду</h3>
-          <p class="text-warm-gray text-sm leading-relaxed">Ты&nbsp;нанял рабочих, но&nbsp;хочешь понимать, что они делают и&nbsp;зачем. Книга даст тебе язык и&nbsp;знания, чтобы задавать правильные вопросы и&nbsp;не&nbsp;принимать халтуру.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== CHAPTERS ===== -->
-  <section id="chapters" class="bg-parchment py-20 lg:py-28">
-    <div class="max-w-content mx-auto px-6 lg:px-12">
-      <div class="text-center mb-14 fade-in">
-        <h2 class="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl text-charcoal mb-4">Ключевые главы</h2>
-        <p class="text-warm-gray text-lg max-w-prose mx-auto">Каждая глава&nbsp;&mdash; самостоятельная статья, которую можно открыть прямо на&nbsp;стройке.</p>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Ch 1 -->
-        <div class="fade-in bg-snow border border-frost rounded-card p-6 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
-          <span class="inline-block bg-primary text-snow text-xs font-bold px-2.5 py-1 rounded-full mb-3">Глава</span>
-          <h3 class="font-heading font-bold text-base text-charcoal mb-2">Фундамент на&nbsp;торфяном грунте</h3>
-          <p class="text-warm-gray text-sm leading-relaxed">Какой тип фундамента работает на&nbsp;болоте, а&nbsp;какой&nbsp;&mdash; утопия. Расчёты, выбор материалов, пошаговый монтаж с&nbsp;фотографиями.</p>
-        </div>
-        <!-- Ch 2 -->
-        <div class="fade-in bg-snow border border-frost rounded-card p-6 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
-          <span class="inline-block bg-primary text-snow text-xs font-bold px-2.5 py-1 rounded-full mb-3">Глава</span>
-          <h3 class="font-heading font-bold text-base text-charcoal mb-2">Дренаж участка</h3>
-          <p class="text-warm-gray text-sm leading-relaxed">Та&nbsp;самая система, видео о&nbsp;которой набрало 220&nbsp;000+ просмотров. Как отвести воду с&nbsp;участка раз и&nbsp;навсегда, а&nbsp;не&nbsp;каждую весну.</p>
-        </div>
-        <!-- Ch 3 -->
-        <div class="fade-in bg-snow border border-frost rounded-card p-6 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
-          <span class="inline-block bg-primary text-snow text-xs font-bold px-2.5 py-1 rounded-full mb-3">Глава</span>
-          <h3 class="font-heading font-bold text-base text-charcoal mb-2">Каркас по&nbsp;технологии &laquo;платформа&raquo;</h3>
-          <p class="text-warm-gray text-sm leading-relaxed">Почему эта технология оптимальна для самостоятельной сборки. Последовательность работ, узлы, крепёж&nbsp;&mdash; всё по&nbsp;шагам.</p>
-        </div>
-        <!-- Ch 4 -->
-        <div class="fade-in bg-snow border border-frost rounded-card p-6 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
-          <span class="inline-block bg-accent text-snow text-xs font-bold px-2.5 py-1 rounded-full mb-3">Ошибки</span>
-          <h3 class="font-heading font-bold text-base text-charcoal mb-2">Ошибки и&nbsp;их&nbsp;исправление</h3>
-          <p class="text-warm-gray text-sm leading-relaxed">Честный разбор того, что пошло не&nbsp;так. С&nbsp;фотографиями &laquo;до&raquo; и&nbsp;&laquo;после&raquo;. Самая ценная глава для тех, кто хочет учиться на&nbsp;чужом опыте.</p>
-        </div>
-        <!-- Ch 5 -->
-        <div class="fade-in bg-snow border border-frost rounded-card p-6 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
-          <span class="inline-block bg-primary text-snow text-xs font-bold px-2.5 py-1 rounded-full mb-3">Глава</span>
-          <h3 class="font-heading font-bold text-base text-charcoal mb-2">Экономия на&nbsp;материалах</h3>
-          <p class="text-warm-gray text-sm leading-relaxed">Где допустимо использовать б/у и&nbsp;бюджетные материалы для черновых работ, а&nbsp;где нужен только новый и&nbsp;качественный. Конкретные примеры и&nbsp;суммы.</p>
-        </div>
-        <!-- Ch 6 -->
-        <div class="fade-in bg-snow border border-frost rounded-card p-6 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
-          <span class="inline-block bg-primary text-snow text-xs font-bold px-2.5 py-1 rounded-full mb-3">Глава</span>
-          <h3 class="font-heading font-bold text-base text-charcoal mb-2">Стены, пол, кровля</h3>
-          <p class="text-warm-gray text-sm leading-relaxed">Полный цикл возведения каркасного дома&nbsp;&mdash; от&nbsp;нижней обвязки до&nbsp;кровельного покрытия. Каждый этап с&nbsp;привязкой к&nbsp;реальным условиям строительства на&nbsp;торфе.</p>
-        </div>
-        <!-- Ch 7 -->
-        <div class="fade-in bg-snow border border-frost rounded-card p-6 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
-          <span class="inline-block bg-primary text-snow text-xs font-bold px-2.5 py-1 rounded-full mb-3">Глава</span>
-          <h3 class="font-heading font-bold text-base text-charcoal mb-2">Нормативная база</h3>
-          <p class="text-warm-gray text-sm leading-relaxed">Ссылки на&nbsp;СНиПы и&nbsp;строительные нормы&nbsp;&mdash; не&nbsp;для того чтобы сдать экзамен, а&nbsp;чтобы понимать, на&nbsp;что ты&nbsp;опираешься и&nbsp;почему это важно.</p>
-        </div>
-        <!-- Ch 8 -->
-        <div class="fade-in bg-snow border border-frost rounded-card p-6 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
-          <span class="inline-block bg-primary text-snow text-xs font-bold px-2.5 py-1 rounded-full mb-3">Глава</span>
-          <h3 class="font-heading font-bold text-base text-charcoal mb-2">Декоративно-прикладные работы</h3>
-          <p class="text-warm-gray text-sm leading-relaxed">Когда конструкция готова&nbsp;&mdash; как довести дом до&nbsp;жилого состояния. Отделка, мелочи, детали, которые делают дом домом.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== SOCIAL PROOF ===== -->
-  <section id="proof" class="bg-snow py-20 lg:py-28">
-    <div class="max-w-content mx-auto px-6 lg:px-12">
-      <div class="text-center mb-14 fade-in">
-        <h2 class="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl text-charcoal mb-4">Признание и&nbsp;доверие</h2>
-      </div>
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-14">
-        <!-- FORUMHOUSE -->
-        <div class="fade-in bg-parchment border border-frost rounded-card p-8 text-center shadow-card">
-          <div class="text-5xl font-heading font-black text-primary mb-2" data-count="220000">0</div>
-          <p class="text-sm text-warm-gray font-semibold uppercase tracking-wider mb-3">Просмотров на FORUMHOUSE</p>
-          <p class="text-warm-gray text-sm leading-relaxed">Видео Юрия о&nbsp;дренаже&nbsp;&mdash; один из&nbsp;самых востребованных материалов по&nbsp;теме водоотведения на&nbsp;сложных грунтах.</p>
-        </div>
-        <!-- Magazine -->
-        <div class="fade-in bg-parchment border border-frost rounded-card p-8 text-center shadow-card">
-          <div class="text-5xl font-heading font-black text-primary mb-2">5&times;</div>
-          <p class="text-sm text-warm-gray font-semibold uppercase tracking-wider mb-3">Лауреат &laquo;Лучший автор&raquo;</p>
-          <p class="text-warm-gray text-sm leading-relaxed">Юрий Подымахин&nbsp;&mdash; лауреат премии журнала &laquo;Дом&raquo; в&nbsp;2009, 2010, 2011, 2013 и&nbsp;2014&nbsp;годах. Системное признание качества.</p>
-        </div>
-        <!-- Photos -->
-        <div class="fade-in bg-parchment border border-frost rounded-card p-8 text-center shadow-card">
-          <div class="text-5xl font-heading font-black text-primary mb-2">1&nbsp;200+</div>
-          <p class="text-sm text-warm-gray font-semibold uppercase tracking-wider mb-3">Фотографий и чертежей</p>
-          <p class="text-warm-gray text-sm leading-relaxed">Каждый этап стройки задокументирован наглядно. Это не&nbsp;теория&nbsp;&mdash; это визуальная пошаговая инструкция.</p>
-        </div>
-      </div>
-      <!-- Testimonials -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-        <div class="fade-in bg-parchment/60 border border-frost rounded-card p-6">
-          <svg class="w-8 h-8 text-frost mb-3" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
-          <p class="text-warm-gray text-sm italic leading-relaxed mb-4">&laquo;Здесь будет отзыв реального читателя о&nbsp;том, как книга помогла решить конкретную проблему на&nbsp;стройке.&raquo;</p>
-          <p class="text-stone text-xs font-semibold">&mdash; Имя, город</p>
-        </div>
-        <div class="fade-in bg-parchment/60 border border-frost rounded-card p-6">
-          <svg class="w-8 h-8 text-frost mb-3" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
-          <p class="text-warm-gray text-sm italic leading-relaxed mb-4">&laquo;Здесь будет отзыв о&nbsp;практической ценности фотографий и&nbsp;пошаговых инструкций.&raquo;</p>
-          <p class="text-stone text-xs font-semibold">&mdash; Имя, город</p>
-        </div>
-        <div class="fade-in bg-parchment/60 border border-frost rounded-card p-6">
-          <svg class="w-8 h-8 text-frost mb-3" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
-          <p class="text-warm-gray text-sm italic leading-relaxed mb-4">&laquo;Здесь будет отзыв о&nbsp;том, сколько удалось сэкономить благодаря советам из&nbsp;книги.&raquo;</p>
-          <p class="text-stone text-xs font-semibold">&mdash; Имя, город</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== FAQ ===== -->
-  <section id="faq" class="bg-parchment py-20 lg:py-28">
-    <div class="max-w-prose mx-auto px-6 lg:px-12">
-      <div class="text-center mb-14 fade-in">
-        <h2 class="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl text-charcoal mb-4">Частые вопросы</h2>
-      </div>
-      <div class="space-y-4">
-        <!-- Q1 -->
-        <div class="fade-in bg-snow border border-frost rounded-card overflow-hidden">
-          <button class="faq-toggle w-full text-left px-6 py-5 flex items-center justify-between gap-4" aria-expanded="false">
-            <span class="font-heading font-bold text-base text-charcoal">У&nbsp;меня не&nbsp;болото, а&nbsp;просто глинистый участок. Книга мне подойдёт?</span>
-            <svg class="w-5 h-5 flex-shrink-0 text-warm-gray" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-          </button>
-          <div class="faq-answer px-6">
-            <p class="text-warm-gray text-sm leading-relaxed pb-5">Основной фокус книги&nbsp;&mdash; торфяные и&nbsp;заболоченные грунты, это самый сложный случай. Но&nbsp;каркасная технология, дренаж, экономия на&nbsp;материалах и&nbsp;приёмы строительства применимы на&nbsp;любом участке. Если у&nbsp;тебя глина&nbsp;&mdash; тебе будет проще, и&nbsp;книга всё равно пригодится.</p>
-          </div>
-        </div>
-        <!-- Q2 -->
-        <div class="fade-in bg-snow border border-frost rounded-card overflow-hidden">
-          <button class="faq-toggle w-full text-left px-6 py-5 flex items-center justify-between gap-4" aria-expanded="false">
-            <span class="font-heading font-bold text-base text-charcoal">Я&nbsp;совсем новичок. Смогу ли я&nbsp;разобраться?</span>
-            <svg class="w-5 h-5 flex-shrink-0 text-warm-gray" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-          </button>
-          <div class="faq-answer px-6">
-            <p class="text-warm-gray text-sm leading-relaxed pb-5">Книга написана человеком, который начинал со&nbsp;школьного удостоверения столяра. В&nbsp;ней ~1&nbsp;200&nbsp;фотографий&nbsp;&mdash; каждый шаг показан наглядно. Это не&nbsp;учебник для инженеров, а&nbsp;руководство для человека, который хочет строить своими руками.</p>
-          </div>
-        </div>
-        <!-- Q3 -->
-        <div class="fade-in bg-snow border border-frost rounded-card overflow-hidden">
-          <button class="faq-toggle w-full text-left px-6 py-5 flex items-center justify-between gap-4" aria-expanded="false">
-            <span class="font-heading font-bold text-base text-charcoal">Нужна ли мне бригада, или реально построить одному?</span>
-            <svg class="w-5 h-5 flex-shrink-0 text-warm-gray" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-          </button>
-          <div class="faq-answer px-6">
-            <p class="text-warm-gray text-sm leading-relaxed pb-5">Автор построил свой дом в&nbsp;одиночку. В&nbsp;книге описано, как организовать работу так, чтобы справляться без помощников. Но&nbsp;если у&nbsp;тебя есть помощник&nbsp;&mdash; будет быстрее.</p>
-          </div>
-        </div>
-        <!-- Q4 -->
-        <div class="fade-in bg-snow border border-frost rounded-card overflow-hidden">
-          <button class="faq-toggle w-full text-left px-6 py-5 flex items-center justify-between gap-4" aria-expanded="false">
-            <span class="font-heading font-bold text-base text-charcoal">Книга заменяет проект дома?</span>
-            <svg class="w-5 h-5 flex-shrink-0 text-warm-gray" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-          </button>
-          <div class="faq-answer px-6">
-            <p class="text-warm-gray text-sm leading-relaxed pb-5">Нет. Книга&nbsp;&mdash; это практическое руководство по&nbsp;технологиям и&nbsp;приёмам строительства на&nbsp;сложном грунте. Проект дома нужен отдельно. Но&nbsp;после прочтения ты&nbsp;будешь понимать, какие решения в&nbsp;проекте разумны, а&nbsp;какие&nbsp;&mdash; избыточны.</p>
-          </div>
-        </div>
-        <!-- Q5 -->
-        <div class="fade-in bg-snow border border-frost rounded-card overflow-hidden">
-          <button class="faq-toggle w-full text-left px-6 py-5 flex items-center justify-between gap-4" aria-expanded="false">
-            <span class="font-heading font-bold text-base text-charcoal">Насколько актуальны нормативы и&nbsp;цены в&nbsp;книге?</span>
-            <svg class="w-5 h-5 flex-shrink-0 text-warm-gray" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-          </button>
-          <div class="faq-answer px-6">
-            <p class="text-warm-gray text-sm leading-relaxed pb-5">СНиПы и&nbsp;строительные нормы меняются нечасто&nbsp;&mdash; базовые принципы остаются прежними. Конкретные цены на&nbsp;материалы, конечно, устаревают, но&nbsp;соотношения и&nbsp;принципы экономии работают всегда.</p>
-          </div>
-        </div>
-        <!-- Q6 -->
-        <div class="fade-in bg-snow border border-frost rounded-card overflow-hidden">
-          <button class="faq-toggle w-full text-left px-6 py-5 flex items-center justify-between gap-4" aria-expanded="false">
-            <span class="font-heading font-bold text-base text-charcoal">Есть ли электронная версия?</span>
-            <svg class="w-5 h-5 flex-shrink-0 text-warm-gray" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-          </button>
-          <div class="faq-answer px-6">
-            <p class="text-warm-gray text-sm leading-relaxed pb-5">Информацию о&nbsp;доступных форматах и&nbsp;способах приобретения смотри на&nbsp;сайте автора: <a href="https://podymakhin.ru" target="_blank" rel="noopener" class="text-primary underline underline-offset-2 hover:text-primary-dark">podymakhin.ru</a> или в&nbsp;группе ВКонтакте: <a href="https://vk.com/Yuri_Podymakhin" target="_blank" rel="noopener" class="text-primary underline underline-offset-2 hover:text-primary-dark">Yuri_Podymakhin</a>.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== FINAL CTA ===== -->
-  <section id="cta" class="relative py-20 lg:py-28 overflow-hidden" style="background: linear-gradient(135deg, #3D4E28 0%, #2C2A25 100%);">
-    <div class="absolute inset-0 opacity-[0.03]" style="background-image: linear-gradient(rgba(255,255,255,.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.5) 1px, transparent 1px); background-size: 48px 48px;"></div>
-    <div class="relative z-10 max-w-content mx-auto px-6 lg:px-12">
-      <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-        <!-- Book -->
-        <div class="lg:w-2/5 flex justify-center fade-in">
-          <div class="book-3d">
-            <div class="book-cover">
-              <div class="spine"></div>
-              <div class="book-edge"></div>
-              <p class="text-snow/80 text-xs font-body font-semibold tracking-widest uppercase mb-4">Юрий ПОДЫМАХИН</p>
-              <p class="text-snow font-heading font-bold text-base sm:text-lg leading-snug mb-1">КАРКАС</p>
-              <p class="text-snow font-heading font-bold text-base sm:text-lg leading-snug mb-2">НАД ПРОПАСТЬЮ:</p>
-              <p class="text-snow/70 font-body text-sm italic leading-snug">строю дом<br>на болоте</p>
-              <div class="absolute bottom-5 left-0 right-0 text-snow/35 text-[10px] font-body">~1 200 фото</div>
-            </div>
-          </div>
-        </div>
-        <!-- CTA Content -->
-        <div class="lg:w-3/5 text-center lg:text-left fade-in">
-          <h2 class="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl text-snow mb-6 leading-tight">Болото&nbsp;&mdash; не&nbsp;приговор.<br>Это условие задачи.</h2>
-          <p class="text-snow/70 text-lg leading-relaxed mb-8 max-w-prose">Юрий Подымахин решил эту задачу в&nbsp;одиночку и&nbsp;записал каждый шаг. 1&nbsp;200&nbsp;фотографий, реальные ошибки, проверенные решения&nbsp;&mdash; всё в&nbsp;одной книге. Не&nbsp;откладывай стройку ещё на&nbsp;один сезон. Каждый год без дома&nbsp;&mdash; это год, когда ты&nbsp;платишь за&nbsp;то, что мог&nbsp;бы уже построить.</p>
-          <a href="https://podymakhin.ru" target="_blank" rel="noopener" class="inline-block bg-accent text-snow px-10 py-4 rounded-button font-bold text-lg shadow-btn hover:bg-accent-light hover:shadow-btn-hover transition-all duration-200 hover:-translate-y-px">Получить книгу сейчас</a>
-        </div>
-      </div>
-      <!-- Dedication -->
-      <p class="text-center text-snow/30 text-sm mt-16 italic max-w-prose mx-auto">&laquo;Тем, кто не&nbsp;отступает перед трудностями и&nbsp;принимает всю ответственность за&nbsp;принятые решения на&nbsp;себя.&raquo;</p>
-    </div>
-  </section>
-
-  <!-- ===== FOOTER ===== -->
-  <footer class="bg-peat py-12">
-    <div class="max-w-content mx-auto px-6 lg:px-12">
-      <div class="flex flex-col md:flex-row items-center justify-between gap-6 text-sm">
-        <div class="text-snow/60 text-center md:text-left">
-          <p class="font-heading font-bold text-snow/80 mb-1">Юрий Подымахин</p>
-          <p>&laquo;Каркас над пропастью: строю дом на болоте&raquo;</p>
-        </div>
-        <div class="flex items-center gap-6 text-snow/50">
-          <a href="https://podymakhin.ru" target="_blank" rel="noopener" class="hover:text-snow transition-colors">podymakhin.ru</a>
-          <a href="https://vk.com/Yuri_Podymakhin" target="_blank" rel="noopener" class="hover:text-snow transition-colors flex items-center gap-1.5" aria-label="ВКонтакте">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.785 16.241s.288-.032.436-.194c.136-.148.132-.427.132-.427s-.02-1.304.587-1.496c.598-.189 1.366 1.258 2.18 1.814.616.42 1.084.328 1.084.328l2.175-.03s1.14-.07.598-.964c-.044-.073-.314-.661-1.618-1.869-1.366-1.265-1.183-1.06.462-3.247.998-1.33 1.398-2.142 1.273-2.49-.12-.331-.854-.244-.854-.244l-2.448.015s-.182-.025-.316.056c-.131.079-.216.263-.216.263s-.387 1.028-.904 1.903c-1.09 1.843-1.525 1.94-1.703 1.826-.415-.267-.311-1.07-.311-1.64 0-1.783.271-2.525-.527-2.716-.265-.063-.46-.105-1.138-.112-.869-.009-1.604.003-2.02.207-.276.136-.49.44-.36.457.16.021.522.097.714.358.248.337.24 1.093.24 1.093s.143 2.098-.334 2.358c-.327.18-.776-.186-1.738-1.862-.493-.858-.865-1.808-.865-1.808s-.072-.176-.2-.271c-.155-.115-.371-.151-.371-.151l-2.325.015s-.349.01-.477.161c-.114.135-.009.413-.009.413s1.82 4.258 3.882 6.403c1.889 1.966 4.035 1.837 4.035 1.837h.973z"/></svg>
-            ВКонтакте
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
+    <div class="grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
+      <!-- Text -->
+      <div class="text-center md:text-left">
+        <p class="text-swamp-400 font-semibold text-sm md:text-base uppercase tracking-widest mb-4">Юрий Подымахин</p>
+        <h1 class="font-heading font-900 text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-white leading-tight mb-4">
+          Каркас над <span class="text-swamp-400">пропастью</span>
+        </h1>
+        <p class="font-heading text-xl sm:text-2xl lg:text-3xl text-fog-300 mb-6">строю дом на болоте</p>
+        <p class="text-fog-400 text-base md:text-lg max-w-lg mb-8 leading-relaxed">
+          Честная история строительства каркасного дома на болотистом грунте. Реальный опыт, ошибки, находки и технические решения &mdash; без прикрас и рекламы.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+          <a href="https://podymakhin.ru" target="_blank" rel="noopener noreferrer" class="btn-pulse inline-block bg-swamp-500 hover:bg-swamp-600 text-white font-bold px-8 py-4 rounded-xl text-lg transition-colors">
+            Купить книгу
+          </a>
+          <a href="#solution" class="inline-block border-2 border-fog-600 hover:border-swamp-400 text-fog-300 hover:text-white font-semibold px-8 py-4 rounded-xl text-lg transition-colors">
+            Узнать больше
           </a>
         </div>
       </div>
-      <div class="border-t border-snow/10 mt-8 pt-6 text-center text-snow/30 text-xs">
-        <p>&copy; Юрий Подымахин. Все права защищены.</p>
+
+      <!-- 3D Book -->
+      <div class="flex justify-center md:justify-end">
+        <div class="book-container" aria-label="Обложка книги: Каркас над пропастью">
+          <div class="book">
+            <div class="book-spine"></div>
+            <div class="book-front bg-gradient-to-b from-swamp-700 via-swamp-600 to-swamp-800 flex flex-col justify-between p-6 border border-swamp-500/30">
+              <!-- Top: author -->
+              <div>
+                <p class="text-white/80 text-sm font-body tracking-widest uppercase">Юрий</p>
+                <p class="text-white font-heading font-bold text-xl tracking-wide uppercase">ПОДЫМАХИН</p>
+              </div>
+              <!-- Center: title -->
+              <div class="text-center -mt-4">
+                <h2 class="font-heading font-black text-2xl text-white leading-tight uppercase tracking-wide mb-1">КАРКАС<br>НАД<br>ПРОПАСТЬЮ:</h2>
+                <p class="text-warm-300 font-body text-sm font-medium mt-2">строю дом на болоте</p>
+              </div>
+              <!-- Bottom: house scene placeholder -->
+              <div class="rounded-md overflow-hidden h-24 mt-2" style="background: linear-gradient(180deg, #b8c8d8 0%, #d0d8e0 30%, #e8ebe0 50%, #a0b880 70%, #6B7B3A 100%);">
+                <!-- Snow/house scene gradient -->
+                <div class="relative w-full h-full flex items-end justify-center pb-2">
+                  <!-- Simple house silhouette via CSS -->
+                  <div class="relative">
+                    <div style="width:0;height:0;border-left:28px solid transparent;border-right:28px solid transparent;border-bottom:20px solid rgba(80,60,40,0.8);margin:0 auto;"></div>
+                    <div style="width:56px;height:30px;background:rgba(80,60,40,0.8);margin:0 auto;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="book-shadow"></div>
+          </div>
+        </div>
       </div>
     </div>
-  </footer>
+  </div>
 
-  <!-- ===== SCRIPTS ===== -->
-  <script>
-    // Mobile menu toggle
-    (function() {
-      var btn = document.getElementById('mobile-menu-btn');
-      var menu = document.getElementById('mobile-menu');
-      btn.addEventListener('click', function() {
-        menu.classList.toggle('hidden');
-      });
-      menu.querySelectorAll('a').forEach(function(link) {
-        link.addEventListener('click', function() {
-          menu.classList.add('hidden');
-        });
-      });
-    })();
+  <!-- Scroll indicator -->
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 text-fog-500 animate-bounce no-print" aria-hidden="true">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+  </div>
+</section>
 
-    // Intersection Observer for fade-in
-    (function() {
-      var elements = document.querySelectorAll('.fade-in');
-      if ('IntersectionObserver' in window) {
-        var observer = new IntersectionObserver(function(entries) {
-          entries.forEach(function(entry) {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('visible');
-              observer.unobserve(entry.target);
-            }
-          });
-        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-        elements.forEach(function(el) { observer.observe(el); });
-      } else {
-        elements.forEach(function(el) { el.classList.add('visible'); });
-      }
-    })();
+<!-- ==================== PROBLEM ==================== -->
+<section id="problem" class="py-20 md:py-28 bg-gradient-to-b from-fog-950 to-fog-900">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16 fade-up">
+      <h2 class="font-heading font-bold text-3xl md:text-4xl lg:text-5xl text-white mb-4">Почему стройка на болоте&nbsp;&mdash; это&nbsp;вызов</h2>
+      <p class="text-fog-400 text-lg max-w-2xl mx-auto">Болотистый грунт &mdash; один из самых сложных типов основания для строительства. Большинство подрядчиков просто отказываются работать в таких условиях.</p>
+    </div>
 
-    // FAQ accordion
-    (function() {
-      document.querySelectorAll('.faq-toggle').forEach(function(toggle) {
-        toggle.addEventListener('click', function() {
-          var answer = this.nextElementSibling;
-          var isOpen = answer.classList.contains('open');
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- Card 1 -->
+      <div class="fade-up card-hover bg-fog-800/50 border border-fog-700/30 rounded-2xl p-8">
+        <div class="w-14 h-14 bg-swamp-500/20 rounded-xl flex items-center justify-center mb-5">
+          <svg class="w-7 h-7 text-swamp-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v2m0 14v2m-7-9H3m18 0h-2m-1.5-6.5L16 7m-8-1.5L6.5 7m11 10l-1.5-1.5M7 17.5L5.5 19M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
+        </div>
+        <h3 class="font-heading font-semibold text-xl text-white mb-3">Непредсказуемый грунт</h3>
+        <p class="text-fog-400 leading-relaxed">Торф, высокий уровень грунтовых вод, подвижность основания &mdash; фундамент может &laquo;поплыть&raquo; в любой момент. Стандартные решения здесь не работают.</p>
+      </div>
+      <!-- Card 2 -->
+      <div class="fade-up card-hover bg-fog-800/50 border border-fog-700/30 rounded-2xl p-8">
+        <div class="w-14 h-14 bg-swamp-500/20 rounded-xl flex items-center justify-center mb-5">
+          <svg class="w-7 h-7 text-swamp-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <h3 class="font-heading font-semibold text-xl text-white mb-3">Перерасход бюджета</h3>
+        <p class="text-fog-400 leading-relaxed">Без правильного планирования стройка на сложном грунте может обойтись в&nbsp;2&ndash;3 раза дороже. Ошибки стоят десятки и сотни тысяч рублей.</p>
+      </div>
+      <!-- Card 3 -->
+      <div class="fade-up card-hover bg-fog-800/50 border border-fog-700/30 rounded-2xl p-8">
+        <div class="w-14 h-14 bg-swamp-500/20 rounded-xl flex items-center justify-center mb-5">
+          <svg class="w-7 h-7 text-swamp-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M12 18h.01"/></svg>
+        </div>
+        <h3 class="font-heading font-semibold text-xl text-white mb-3">Отсутствие информации</h3>
+        <p class="text-fog-400 leading-relaxed">В интернете &mdash; тысячи противоречивых советов, рекламные статьи и теоретические выкладки. Реального опыта строительства на болоте &mdash; почти нет.</p>
+      </div>
+      <!-- Card 4 -->
+      <div class="fade-up card-hover bg-fog-800/50 border border-fog-700/30 rounded-2xl p-8">
+        <div class="w-14 h-14 bg-swamp-500/20 rounded-xl flex items-center justify-center mb-5">
+          <svg class="w-7 h-7 text-swamp-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+        </div>
+        <h3 class="font-heading font-semibold text-xl text-white mb-3">Технические ошибки</h3>
+        <p class="text-fog-400 leading-relaxed">Неправильный выбор фундамента, ошибки в утеплении, плохая вентиляция &mdash; каждая мелочь на болоте превращается в серьёзную проблему.</p>
+      </div>
+      <!-- Card 5 -->
+      <div class="fade-up card-hover bg-fog-800/50 border border-fog-700/30 rounded-2xl p-8">
+        <div class="w-14 h-14 bg-swamp-500/20 rounded-xl flex items-center justify-center mb-5">
+          <svg class="w-7 h-7 text-swamp-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <h3 class="font-heading font-semibold text-xl text-white mb-3">Недобросовестные подрядчики</h3>
+        <p class="text-fog-400 leading-relaxed">Когда заказчик не разбирается в тонкостях, подрядчики могут экономить на материалах и нарушать технологию. Без знаний вы не сможете это проконтролировать.</p>
+      </div>
+      <!-- Card 6 -->
+      <div class="fade-up card-hover bg-fog-800/50 border border-fog-700/30 rounded-2xl p-8">
+        <div class="w-14 h-14 bg-swamp-500/20 rounded-xl flex items-center justify-center mb-5">
+          <svg class="w-7 h-7 text-swamp-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        </div>
+        <h3 class="font-heading font-semibold text-xl text-white mb-3">Страх потерять дом</h3>
+        <p class="text-fog-400 leading-relaxed">Самый главный страх: а вдруг дом не простоит и десяти лет? Вдруг фундамент просядет, стены поведёт, а вложенные миллионы пропадут?</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-          // Close all
-          document.querySelectorAll('.faq-answer').forEach(function(a) {
-            a.classList.remove('open');
-            a.style.maxHeight = '0';
-          });
-          document.querySelectorAll('.faq-toggle').forEach(function(t) {
-            t.classList.remove('active');
-            t.setAttribute('aria-expanded', 'false');
-          });
+<div class="section-divider" aria-hidden="true"></div>
 
-          // Open clicked if was closed
-          if (!isOpen) {
-            answer.classList.add('open');
-            answer.style.maxHeight = answer.scrollHeight + 'px';
-            this.classList.add('active');
-            this.setAttribute('aria-expanded', 'true');
-          }
-        });
-      });
-    })();
+<!-- ==================== SOLUTION ==================== -->
+<section id="solution" class="py-20 md:py-28 bg-gradient-to-b from-fog-900 to-fog-800">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16 fade-up">
+      <h2 class="font-heading font-bold text-3xl md:text-4xl lg:text-5xl text-white mb-4">Что внутри книги</h2>
+      <p class="text-fog-400 text-lg max-w-2xl mx-auto">Более 300 страниц практического опыта, технических решений и честных выводов. Не теория &mdash; а реальная стройка от первого колышка до новоселья.</p>
+    </div>
 
-    // Animated counter for FORUMHOUSE views
-    (function() {
-      var counterEl = document.querySelector('[data-count]');
-      if (!counterEl) return;
-      var target = parseInt(counterEl.getAttribute('data-count'), 10);
-      var hasRun = false;
+    <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
+      <!-- Benefit 1 -->
+      <div class="fade-up flex gap-5">
+        <div class="flex-shrink-0 w-16 h-16 bg-swamp-500/20 rounded-2xl flex items-center justify-center">
+          <span class="font-heading font-bold text-2xl text-swamp-400">01</span>
+        </div>
+        <div>
+          <h3 class="font-heading font-semibold text-xl text-white mb-2">Полная хронология строительства</h3>
+          <p class="text-fog-400 leading-relaxed">День за днём, этап за этапом &mdash; от выбора участка и геологических изысканий до финишной отделки. Все решения объяснены и обоснованы.</p>
+        </div>
+      </div>
+      <!-- Benefit 2 -->
+      <div class="fade-up flex gap-5">
+        <div class="flex-shrink-0 w-16 h-16 bg-swamp-500/20 rounded-2xl flex items-center justify-center">
+          <span class="font-heading font-bold text-2xl text-swamp-400">02</span>
+        </div>
+        <div>
+          <h3 class="font-heading font-semibold text-xl text-white mb-2">Фундамент на сложном грунте</h3>
+          <p class="text-fog-400 leading-relaxed">Детальный разбор выбора и устройства фундамента на болотистой почве. Сравнение свайных, плитных и других вариантов с реальными расчётами.</p>
+        </div>
+      </div>
+      <!-- Benefit 3 -->
+      <div class="fade-up flex gap-5">
+        <div class="flex-shrink-0 w-16 h-16 bg-swamp-500/20 rounded-2xl flex items-center justify-center">
+          <span class="font-heading font-bold text-2xl text-swamp-400">03</span>
+        </div>
+        <div>
+          <h3 class="font-heading font-semibold text-xl text-white mb-2">Честный бюджет и сметы</h3>
+          <p class="text-fog-400 leading-relaxed">Реальные цифры: сколько стоит каждый этап, где можно сэкономить, а где экономия приведёт к катастрофе. Полная финансовая прозрачность.</p>
+        </div>
+      </div>
+      <!-- Benefit 4 -->
+      <div class="fade-up flex gap-5">
+        <div class="flex-shrink-0 w-16 h-16 bg-swamp-500/20 rounded-2xl flex items-center justify-center">
+          <span class="font-heading font-bold text-2xl text-swamp-400">04</span>
+        </div>
+        <div>
+          <h3 class="font-heading font-semibold text-xl text-white mb-2">Ошибки и как их избежать</h3>
+          <p class="text-fog-400 leading-relaxed">Автор честно рассказывает о своих промахах, переделках и неожиданных проблемах. Учитесь на чужих ошибках &mdash; это дешевле.</p>
+        </div>
+      </div>
+      <!-- Benefit 5 -->
+      <div class="fade-up flex gap-5">
+        <div class="flex-shrink-0 w-16 h-16 bg-swamp-500/20 rounded-2xl flex items-center justify-center">
+          <span class="font-heading font-bold text-2xl text-swamp-400">05</span>
+        </div>
+        <div>
+          <h3 class="font-heading font-semibold text-xl text-white mb-2">Каркасная технология в деталях</h3>
+          <p class="text-fog-400 leading-relaxed">Подробный разбор каркасной технологии: стены, кровля, утепление, пароизоляция, вентиляция. Каждый узел &mdash; с пояснениями и фотографиями.</p>
+        </div>
+      </div>
+      <!-- Benefit 6 -->
+      <div class="fade-up flex gap-5">
+        <div class="flex-shrink-0 w-16 h-16 bg-swamp-500/20 rounded-2xl flex items-center justify-center">
+          <span class="font-heading font-bold text-2xl text-swamp-400">06</span>
+        </div>
+        <div>
+          <h3 class="font-heading font-semibold text-xl text-white mb-2">Проверено сообществом</h3>
+          <p class="text-fog-400 leading-relaxed">История строительства задокументирована на FORUMHOUSE &mdash; тысячи просмотров, сотни комментариев, живые обсуждения каждого этапа.</p>
+        </div>
+      </div>
+    </div>
 
-      function animateCounter() {
-        if (hasRun) return;
-        hasRun = true;
-        var duration = 2000;
-        var startTime = null;
+    <!-- Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 fade-up">
+      <div class="text-center p-6 bg-fog-700/30 rounded-2xl">
+        <p class="font-heading font-bold text-3xl md:text-4xl text-swamp-400">300+</p>
+        <p class="text-fog-400 text-sm mt-1">страниц</p>
+      </div>
+      <div class="text-center p-6 bg-fog-700/30 rounded-2xl">
+        <p class="font-heading font-bold text-3xl md:text-4xl text-swamp-400">200+</p>
+        <p class="text-fog-400 text-sm mt-1">фотографий</p>
+      </div>
+      <div class="text-center p-6 bg-fog-700/30 rounded-2xl">
+        <p class="font-heading font-bold text-3xl md:text-4xl text-swamp-400">3</p>
+        <p class="text-fog-400 text-sm mt-1">года стройки</p>
+      </div>
+      <div class="text-center p-6 bg-fog-700/30 rounded-2xl">
+        <p class="font-heading font-bold text-3xl md:text-4xl text-swamp-400">100%</p>
+        <p class="text-fog-400 text-sm mt-1">реальный опыт</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-        function step(timestamp) {
-          if (!startTime) startTime = timestamp;
-          var progress = Math.min((timestamp - startTime) / duration, 1);
-          var eased = 1 - Math.pow(1 - progress, 3);
-          var current = Math.floor(eased * target);
-          counterEl.textContent = current.toLocaleString('ru-RU') + '+';
-          if (progress < 1) {
-            requestAnimationFrame(step);
-          } else {
-            counterEl.textContent = target.toLocaleString('ru-RU') + '+';
-          }
-        }
-        requestAnimationFrame(step);
-      }
+<!-- ==================== AUTHOR ==================== -->
+<section id="author" class="py-20 md:py-28 bg-gradient-to-b from-fog-800 to-fog-700">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid md:grid-cols-5 gap-12 items-center">
+      <!-- Photo placeholder -->
+      <div class="md:col-span-2 fade-up">
+        <div class="relative mx-auto w-64 h-80 md:w-full md:h-96 rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-swamp-600 to-swamp-800 flex items-end justify-center" aria-label="Фотография автора Юрия Подымахина">
+          <!-- Silhouette placeholder -->
+          <div class="relative w-full h-full flex items-center justify-center">
+            <svg class="w-32 h-32 text-swamp-400/50" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-swamp-900/80 to-transparent"></div>
+          <p class="absolute bottom-4 left-4 right-4 text-white/60 text-sm text-center font-body">Фото автора</p>
+        </div>
+      </div>
+      <!-- Bio -->
+      <div class="md:col-span-3 fade-up">
+        <h2 class="font-heading font-bold text-3xl md:text-4xl text-white mb-6">Юрий Подымахин</h2>
+        <div class="space-y-4 text-fog-300 leading-relaxed">
+          <p>Инженер по образованию, строитель по призванию. Юрий не профессиональный подрядчик &mdash; он обычный человек, который решил построить дом для своей семьи. Но участок оказался на болоте, и&nbsp;это изменило всё.</p>
+          <p>Вместо того чтобы отступить, Юрий погрузился в изучение грунтов, фундаментов и каркасных технологий. Каждый этап он документировал на форуме FORUMHOUSE, делясь опытом и получая обратную связь от сообщества.</p>
+          <p>Результат &mdash; не просто построенный дом, а уникальная книга-дневник, в которой каждая глава &mdash; это реальный этап стройки с фотографиями, расчётами и выводами.</p>
+        </div>
+        <div class="flex flex-wrap gap-4 mt-8">
+          <div class="bg-fog-600/30 rounded-xl px-5 py-3">
+            <p class="text-swamp-400 font-bold text-lg">FORUMHOUSE</p>
+            <p class="text-fog-400 text-sm">Активный участник</p>
+          </div>
+          <div class="bg-fog-600/30 rounded-xl px-5 py-3">
+            <p class="text-swamp-400 font-bold text-lg">Каркасный дом</p>
+            <p class="text-fog-400 text-sm">Построен своими силами</p>
+          </div>
+          <div class="bg-fog-600/30 rounded-xl px-5 py-3">
+            <p class="text-swamp-400 font-bold text-lg">Публикации</p>
+            <p class="text-fog-400 text-sm">Статьи и интервью</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
-      if ('IntersectionObserver' in window) {
-        var obs = new IntersectionObserver(function(entries) {
-          if (entries[0].isIntersecting) {
-            animateCounter();
-            obs.unobserve(counterEl);
-          }
-        }, { threshold: 0.5 });
-        obs.observe(counterEl);
-      } else {
-        animateCounter();
-      }
-    })();
+<!-- ==================== TARGET AUDIENCE ==================== -->
+<section id="audience" class="py-20 md:py-28 bg-gradient-to-b from-fog-700 to-fog-600">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16 fade-up">
+      <h2 class="font-heading font-bold text-3xl md:text-4xl lg:text-5xl text-white mb-4">Для кого эта книга</h2>
+      <p class="text-fog-200 text-lg max-w-2xl mx-auto">Книга будет полезна всем, кто связан со строительством на сложных грунтах &mdash; от начинающих застройщиков до опытных строителей.</p>
+    </div>
 
-    // Navbar shadow on scroll
-    (function() {
-      var navbar = document.getElementById('navbar');
-      window.addEventListener('scroll', function() {
-        if (window.scrollY > 80) {
-          navbar.classList.add('shadow-md');
-        } else {
-          navbar.classList.remove('shadow-md');
-        }
-      }, { passive: true });
-    })();
-  </script>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- Persona 1 -->
+      <div class="fade-up card-hover bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-7 text-center">
+        <div class="w-16 h-16 mx-auto bg-swamp-500/20 rounded-full flex items-center justify-center mb-5">
+          <svg class="w-8 h-8 text-swamp-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        </div>
+        <h3 class="font-heading font-semibold text-lg text-white mb-3">Будущий застройщик</h3>
+        <p class="text-fog-200 text-sm leading-relaxed">Вы только планируете строительство и хотите понять, с чем столкнётесь. Особенно если ваш участок &mdash; на сложном грунте.</p>
+      </div>
+      <!-- Persona 2 -->
+      <div class="fade-up card-hover bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-7 text-center">
+        <div class="w-16 h-16 mx-auto bg-swamp-500/20 rounded-full flex items-center justify-center mb-5">
+          <svg class="w-8 h-8 text-swamp-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/></svg>
+        </div>
+        <h3 class="font-heading font-semibold text-lg text-white mb-3">Самостройщик</h3>
+        <p class="text-fog-200 text-sm leading-relaxed">Вы строите дом своими руками и ищете проверенные решения. Книга &mdash; ваш практический справочник на каждый день стройки.</p>
+      </div>
+      <!-- Persona 3 -->
+      <div class="fade-up card-hover bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-7 text-center">
+        <div class="w-16 h-16 mx-auto bg-swamp-500/20 rounded-full flex items-center justify-center mb-5">
+          <svg class="w-8 h-8 text-swamp-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        </div>
+        <h3 class="font-heading font-semibold text-lg text-white mb-3">Контролёр подрядчика</h3>
+        <p class="text-fog-200 text-sm leading-relaxed">Вы нанимаете бригаду и хотите понимать, что они делают. Книга даст вам знания для грамотного контроля строительства.</p>
+      </div>
+      <!-- Persona 4 -->
+      <div class="fade-up card-hover bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-7 text-center">
+        <div class="w-16 h-16 mx-auto bg-swamp-500/20 rounded-full flex items-center justify-center mb-5">
+          <svg class="w-8 h-8 text-swamp-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        </div>
+        <h3 class="font-heading font-semibold text-lg text-white mb-3">Любитель стройки</h3>
+        <p class="text-fog-200 text-sm leading-relaxed">Вам интересна тема строительства, вы читаете форумы и блоги. Эта книга &mdash; увлекательная история реального проекта с техническими деталями.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
+<!-- ==================== CHAPTERS ==================== -->
+<section id="chapters" class="py-20 md:py-28 bg-gradient-to-b from-fog-600 to-fog-400">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16 fade-up">
+      <h2 class="font-heading font-bold text-3xl md:text-4xl lg:text-5xl text-fog-950 mb-4">Ключевые главы</h2>
+      <p class="text-fog-800 text-lg max-w-2xl mx-auto">Каждая глава &mdash; это отдельный этап строительства с подробным описанием, фотографиями и практическими выводами.</p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="fade-up card-hover bg-white/80 backdrop-blur-sm rounded-2xl p-7 border border-fog-300">
+        <span class="text-swamp-500 font-heading font-bold text-sm uppercase tracking-widest">Глава 1&ndash;2</span>
+        <h3 class="font-heading font-semibold text-xl text-fog-950 mt-2 mb-3">Выбор участка и подготовка</h3>
+        <p class="text-fog-700 text-sm leading-relaxed">Как мы выбрали участок на болоте, какие исследования провели, и почему решили не отказываться от этой земли.</p>
+      </div>
+      <div class="fade-up card-hover bg-white/80 backdrop-blur-sm rounded-2xl p-7 border border-fog-300">
+        <span class="text-swamp-500 font-heading font-bold text-sm uppercase tracking-widest">Глава 3&ndash;4</span>
+        <h3 class="font-heading font-semibold text-xl text-fog-950 mt-2 mb-3">Фундамент и основание</h3>
+        <p class="text-fog-700 text-sm leading-relaxed">Детальный разбор выбора типа фундамента, подготовка площадки, устройство свай и ростверка на сложном грунте.</p>
+      </div>
+      <div class="fade-up card-hover bg-white/80 backdrop-blur-sm rounded-2xl p-7 border border-fog-300">
+        <span class="text-swamp-500 font-heading font-bold text-sm uppercase tracking-widest">Глава 5&ndash;7</span>
+        <h3 class="font-heading font-semibold text-xl text-fog-950 mt-2 mb-3">Каркас и стены</h3>
+        <p class="text-fog-700 text-sm leading-relaxed">Сборка каркаса, обшивка, утепление стен. Выбор материалов, расчёт пирога стены, монтаж пароизоляции и ветрозащиты.</p>
+      </div>
+      <div class="fade-up card-hover bg-white/80 backdrop-blur-sm rounded-2xl p-7 border border-fog-300">
+        <span class="text-swamp-500 font-heading font-bold text-sm uppercase tracking-widest">Глава 8&ndash;9</span>
+        <h3 class="font-heading font-semibold text-xl text-fog-950 mt-2 mb-3">Кровля и водоотведение</h3>
+        <p class="text-fog-700 text-sm leading-relaxed">Устройство крыши, выбор кровельного материала, организация водосточной системы и дренажа вокруг дома.</p>
+      </div>
+      <div class="fade-up card-hover bg-white/80 backdrop-blur-sm rounded-2xl p-7 border border-fog-300">
+        <span class="text-swamp-500 font-heading font-bold text-sm uppercase tracking-widest">Глава 10&ndash;12</span>
+        <h3 class="font-heading font-semibold text-xl text-fog-950 mt-2 mb-3">Инженерные системы</h3>
+        <p class="text-fog-700 text-sm leading-relaxed">Электрика, отопление, вентиляция, водоснабжение и канализация &mdash; все инженерные сети в каркасном доме на болоте.</p>
+      </div>
+      <div class="fade-up card-hover bg-white/80 backdrop-blur-sm rounded-2xl p-7 border border-fog-300">
+        <span class="text-swamp-500 font-heading font-bold text-sm uppercase tracking-widest">Глава 13&ndash;15</span>
+        <h3 class="font-heading font-semibold text-xl text-fog-950 mt-2 mb-3">Отделка и итоги</h3>
+        <p class="text-fog-700 text-sm leading-relaxed">Внутренняя и внешняя отделка, благоустройство участка, финальная смета и выводы. Чему научила эта стройка.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SOCIAL PROOF ==================== -->
+<section id="social-proof" class="py-20 md:py-28 bg-gradient-to-b from-fog-400 to-fog-200">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16 fade-up">
+      <h2 class="font-heading font-bold text-3xl md:text-4xl lg:text-5xl text-fog-950 mb-4">Признание сообщества</h2>
+      <p class="text-fog-700 text-lg max-w-2xl mx-auto">Книга основана на реальном дневнике строительства, который читали и обсуждали тысячи людей.</p>
+    </div>
+
+    <!-- FORUMHOUSE stats -->
+    <div class="grid sm:grid-cols-3 gap-6 mb-12 fade-up">
+      <div class="text-center bg-white rounded-2xl shadow-lg p-8 card-hover">
+        <div class="w-12 h-12 mx-auto bg-swamp-100 rounded-full flex items-center justify-center mb-4">
+          <svg class="w-6 h-6 text-swamp-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+        </div>
+        <p class="font-heading font-bold text-4xl text-swamp-600">500K+</p>
+        <p class="text-fog-600 mt-2">просмотров темы на FORUMHOUSE</p>
+      </div>
+      <div class="text-center bg-white rounded-2xl shadow-lg p-8 card-hover">
+        <div class="w-12 h-12 mx-auto bg-swamp-100 rounded-full flex items-center justify-center mb-4">
+          <svg class="w-6 h-6 text-swamp-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        </div>
+        <p class="font-heading font-bold text-4xl text-swamp-600">1000+</p>
+        <p class="text-fog-600 mt-2">комментариев и вопросов</p>
+      </div>
+      <div class="text-center bg-white rounded-2xl shadow-lg p-8 card-hover">
+        <div class="w-12 h-12 mx-auto bg-swamp-100 rounded-full flex items-center justify-center mb-4">
+          <svg class="w-6 h-6 text-swamp-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+        </div>
+        <p class="font-heading font-bold text-4xl text-swamp-600">50+</p>
+        <p class="text-fog-600 mt-2">упоминаний в строительных СМИ</p>
+      </div>
+    </div>
+
+    <!-- Testimonials -->
+    <div class="grid md:grid-cols-2 gap-6 fade-up">
+      <blockquote class="bg-white rounded-2xl shadow-md p-8 border-l-4 border-swamp-500 card-hover">
+        <p class="text-fog-700 italic leading-relaxed mb-4">&laquo;Читал тему на форуме от начала до конца &mdash; как сериал смотришь. Когда вышла книга, купил не раздумывая. Это лучшее, что я видел о каркасном строительстве на сложном грунте.&raquo;</p>
+        <footer class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-swamp-100 flex items-center justify-center text-swamp-600 font-bold">А</div>
+          <div>
+            <p class="font-semibold text-fog-900">Алексей М.</p>
+            <p class="text-fog-500 text-sm">Участник FORUMHOUSE</p>
+          </div>
+        </footer>
+      </blockquote>
+      <blockquote class="bg-white rounded-2xl shadow-md p-8 border-l-4 border-swamp-500 card-hover">
+        <p class="text-fog-700 italic leading-relaxed mb-4">&laquo;Мы тоже строим на болотистом участке. Книга Юрия помогла нам избежать как минимум трёх серьёзных ошибок на этапе фундамента. Окупилась в первый же день.&raquo;</p>
+        <footer class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-swamp-100 flex items-center justify-center text-swamp-600 font-bold">Е</div>
+          <div>
+            <p class="font-semibold text-fog-900">Елена и Дмитрий К.</p>
+            <p class="text-fog-500 text-sm">Застройщики, Ленинградская обл.</p>
+          </div>
+        </footer>
+      </blockquote>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FAQ ==================== -->
+<section id="faq" class="py-20 md:py-28 bg-gradient-to-b from-fog-200 to-fog-100">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16 fade-up">
+      <h2 class="font-heading font-bold text-3xl md:text-4xl lg:text-5xl text-fog-950 mb-4">Частые вопросы</h2>
+    </div>
+
+    <div class="space-y-4 fade-up" role="list">
+      <!-- FAQ 1 -->
+      <div class="faq-item bg-white rounded-xl shadow-sm border border-fog-200" role="listitem">
+        <button class="faq-toggle w-full flex items-center justify-between p-6 text-left" aria-expanded="false">
+          <span class="font-semibold text-fog-900 pr-4">Книга подходит только для строительства на болоте?</span>
+          <svg class="faq-chevron w-5 h-5 text-fog-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="faq-answer px-6">
+          <p class="text-fog-600 leading-relaxed pb-6">Нет, книга будет полезна всем, кто строит каркасный дом, независимо от типа грунта. Большая часть материала посвящена общим принципам каркасного строительства, утеплению, инженерным системам. Специфика болотистого грунта &mdash; это дополнительный бонус для тех, кто столкнулся с аналогичной проблемой.</p>
+        </div>
+      </div>
+      <!-- FAQ 2 -->
+      <div class="faq-item bg-white rounded-xl shadow-sm border border-fog-200" role="listitem">
+        <button class="faq-toggle w-full flex items-center justify-between p-6 text-left" aria-expanded="false">
+          <span class="font-semibold text-fog-900 pr-4">Нужны ли строительные знания для чтения?</span>
+          <svg class="faq-chevron w-5 h-5 text-fog-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="faq-answer px-6">
+          <p class="text-fog-600 leading-relaxed pb-6">Книга написана доступным языком и рассчитана на обычного человека, не профессионального строителя. Все технические термины объясняются, а сложные моменты сопровождаются фотографиями и схемами. Если вы можете читать строительные форумы &mdash; вы справитесь и с этой книгой.</p>
+        </div>
+      </div>
+      <!-- FAQ 3 -->
+      <div class="faq-item bg-white rounded-xl shadow-sm border border-fog-200" role="listitem">
+        <button class="faq-toggle w-full flex items-center justify-between p-6 text-left" aria-expanded="false">
+          <span class="font-semibold text-fog-900 pr-4">В каком формате можно купить книгу?</span>
+          <svg class="faq-chevron w-5 h-5 text-fog-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="faq-answer px-6">
+          <p class="text-fog-600 leading-relaxed pb-6">Книга доступна в печатном формате. Подробности о форматах, ценах и доставке &mdash; на сайте podymakhin.ru. Следите за обновлениями, электронная версия тоже планируется.</p>
+        </div>
+      </div>
+      <!-- FAQ 4 -->
+      <div class="faq-item bg-white rounded-xl shadow-sm border border-fog-200" role="listitem">
+        <button class="faq-toggle w-full flex items-center justify-between p-6 text-left" aria-expanded="false">
+          <span class="font-semibold text-fog-900 pr-4">Есть ли в книге реальные сметы и цифры?</span>
+          <svg class="faq-chevron w-5 h-5 text-fog-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="faq-answer px-6">
+          <p class="text-fog-600 leading-relaxed pb-6">Да, книга содержит реальные цифры: стоимость материалов, работ, доставки на каждом этапе. Автор не скрывает расходы и открыто делится финансовой стороной проекта. Конечно, цены могут меняться, но пропорции и принципы распределения бюджета остаются актуальными.</p>
+        </div>
+      </div>
+      <!-- FAQ 5 -->
+      <div class="faq-item bg-white rounded-xl shadow-sm border border-fog-200" role="listitem">
+        <button class="faq-toggle w-full flex items-center justify-between p-6 text-left" aria-expanded="false">
+          <span class="font-semibold text-fog-900 pr-4">Чем книга отличается от темы на FORUMHOUSE?</span>
+          <svg class="faq-chevron w-5 h-5 text-fog-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="faq-answer px-6">
+          <p class="text-fog-600 leading-relaxed pb-6">Книга &mdash; это систематизированная, переработанная и дополненная версия форумного дневника. Материал структурирован по этапам, добавлены ретроспективные выводы, исправлены ошибки в рассуждениях, а фотографии отобраны и подписаны. Это не просто копия форумной темы, а полноценная книга.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FINAL CTA ==================== -->
+<section id="cta" class="py-20 md:py-28 bg-gradient-to-br from-swamp-800 via-swamp-700 to-swamp-900 relative overflow-hidden">
+  <div class="absolute inset-0 opacity-10" style="background: radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.1) 0%, transparent 70%);" aria-hidden="true"></div>
+  <div class="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center fade-up">
+    <h2 class="font-heading font-bold text-3xl md:text-4xl lg:text-5xl text-white mb-6">Постройте свой дом <span class="text-warm-400">правильно</span></h2>
+    <p class="text-swamp-200 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+      Не повторяйте чужих ошибок. Узнайте, как построить надёжный каркасный дом даже на самом сложном грунте &mdash; из первых рук, с реальными цифрами и фотографиями.
+    </p>
+    <a href="https://podymakhin.ru" target="_blank" rel="noopener noreferrer" class="btn-pulse inline-block bg-warm-500 hover:bg-warm-600 text-white font-bold px-10 py-5 rounded-xl text-xl transition-colors shadow-lg">
+      Купить книгу на podymakhin.ru
+    </a>
+  </div>
+</section>
+
+</main>
+
+<!-- ==================== FOOTER ==================== -->
+<footer class="bg-swamp-950 text-fog-400 py-12" role="contentinfo">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-8">
+      <!-- Brand -->
+      <div>
+        <p class="font-heading font-bold text-xl text-white mb-3">КАРКАС<span class="text-swamp-400">.</span>КНИГА</p>
+        <p class="text-sm leading-relaxed">&laquo;Каркас над пропастью: строю дом на болоте&raquo; &mdash; книга Юрия Подымахина о реальном строительстве каркасного дома на болотистом грунте.</p>
+      </div>
+      <!-- Links -->
+      <div>
+        <h3 class="font-semibold text-white mb-3">Ссылки</h3>
+        <ul class="space-y-2 text-sm">
+          <li><a href="https://podymakhin.ru" target="_blank" rel="noopener noreferrer" class="hover:text-swamp-400 transition-colors">podymakhin.ru</a></li>
+          <li><a href="#solution" class="hover:text-swamp-400 transition-colors">О книге</a></li>
+          <li><a href="#author" class="hover:text-swamp-400 transition-colors">Об авторе</a></li>
+          <li><a href="#faq" class="hover:text-swamp-400 transition-colors">Частые вопросы</a></li>
+        </ul>
+      </div>
+      <!-- Social -->
+      <div>
+        <h3 class="font-semibold text-white mb-3">Контакты</h3>
+        <div class="flex gap-4 mb-4">
+          <!-- VK icon -->
+          <a href="https://vk.com" target="_blank" rel="noopener noreferrer" class="w-10 h-10 bg-fog-800 hover:bg-swamp-600 rounded-lg flex items-center justify-center transition-colors" aria-label="ВКонтакте">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.408 0 15.684 0zm3.692 17.123h-1.744c-.66 0-.862-.523-2.049-1.714-1.033-1.01-1.49-1.147-1.744-1.147-.356 0-.458.102-.458.593v1.575c0 .424-.135.678-1.253.678-1.846 0-3.896-1.118-5.335-3.202C4.624 10.857 4 8.57 4 8.096c0-.254.102-.491.593-.491h1.744c.44 0 .61.203.78.678.847 2.49 2.27 4.675 2.854 4.675.22 0 .322-.102.322-.66V9.721c-.068-1.186-.695-1.287-.695-1.71 0-.203.17-.407.44-.407h2.744c.373 0 .508.203.508.644v3.49c0 .373.17.508.271.508.22 0 .407-.135.813-.542 1.253-1.406 2.151-3.574 2.151-3.574.119-.254.322-.491.762-.491h1.744c.525 0 .644.271.525.644-.22 1.017-2.354 4.031-2.354 4.031-.186.305-.254.44 0 .78.186.254.796.78 1.203 1.253.745.847 1.32 1.558 1.473 2.049.17.474-.085.72-.576.72z"/></svg>
+          </a>
+          <!-- Website icon -->
+          <a href="https://podymakhin.ru" target="_blank" rel="noopener noreferrer" class="w-10 h-10 bg-fog-800 hover:bg-swamp-600 rounded-lg flex items-center justify-center transition-colors" aria-label="Сайт автора">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+          </a>
+        </div>
+        <p class="text-xs text-fog-600">&copy; 2024&ndash;2026 Юрий Подымахин. Все права защищены.</p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ==================== SCRIPTS ==================== -->
+<script>
+// Mobile menu toggle
+const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+const mobileMenu = document.getElementById('mobile-menu');
+mobileMenuBtn.addEventListener('click', () => {
+  const expanded = mobileMenuBtn.getAttribute('aria-expanded') === 'true';
+  mobileMenuBtn.setAttribute('aria-expanded', !expanded);
+  mobileMenu.classList.toggle('hidden');
+});
+// Close mobile menu on link click
+mobileMenu.querySelectorAll('a').forEach(link => {
+  link.addEventListener('click', () => {
+    mobileMenu.classList.add('hidden');
+    mobileMenuBtn.setAttribute('aria-expanded', 'false');
+  });
+});
+
+// Navbar scroll effect
+const navbar = document.getElementById('navbar');
+let lastScroll = 0;
+window.addEventListener('scroll', () => {
+  const currentScroll = window.pageYOffset;
+  if (currentScroll > 80) {
+    navbar.classList.add('nav-scrolled');
+  } else {
+    navbar.classList.remove('nav-scrolled');
+  }
+  lastScroll = currentScroll;
+}, { passive: true });
+
+// Intersection Observer for fade-in animations
+const fadeElements = document.querySelectorAll('.fade-up');
+const fadeObserver = new IntersectionObserver((entries) => {
+  entries.forEach((entry, index) => {
+    if (entry.isIntersecting) {
+      // Stagger animation
+      setTimeout(() => {
+        entry.target.classList.add('visible');
+      }, index * 80);
+      fadeObserver.unobserve(entry.target);
+    }
+  });
+}, {
+  threshold: 0.1,
+  rootMargin: '0px 0px -40px 0px'
+});
+fadeElements.forEach(el => fadeObserver.observe(el));
+
+// FAQ Accordion
+document.querySelectorAll('.faq-toggle').forEach(button => {
+  button.addEventListener('click', () => {
+    const item = button.parentElement;
+    const answer = item.querySelector('.faq-answer');
+    const chevron = item.querySelector('.faq-chevron');
+    const isOpen = answer.classList.contains('open');
+
+    // Close all others
+    document.querySelectorAll('.faq-answer.open').forEach(openAnswer => {
+      openAnswer.classList.remove('open');
+      openAnswer.parentElement.querySelector('.faq-chevron').classList.remove('open');
+      openAnswer.parentElement.querySelector('.faq-toggle').setAttribute('aria-expanded', 'false');
+    });
+
+    // Toggle current
+    if (!isOpen) {
+      answer.classList.add('open');
+      chevron.classList.add('open');
+      button.setAttribute('aria-expanded', 'true');
+    }
+  });
+});
+
+// Simple parallax on hero
+const heroSection = document.getElementById('hero');
+const parallaxBg = heroSection.querySelector('.parallax-bg');
+window.addEventListener('scroll', () => {
+  const scrolled = window.pageYOffset;
+  if (scrolled < window.innerHeight) {
+    parallaxBg.style.transform = 'translateY(' + (scrolled * 0.3) + 'px)';
+  }
+}, { passive: true });
+</script>
 </body>
 </html>
