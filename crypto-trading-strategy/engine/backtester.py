@@ -65,6 +65,8 @@ class Backtester:
         day_counter = 0
         bars_per_day = 96  # 15-minute bars in 24 hours
         funding_interval = 32  # Every 8 hours = 32 bars at 15m
+        position_open_bars: dict[str, int] = {}  # Track when each position opened
+        time_stop_bars = int(self.config.TIME_STOP_HOURS * 4)  # 15m bars per hour
 
         for i in range(start_idx, min_len):
             # New day logic
@@ -87,6 +89,16 @@ class Backtester:
 
             # Update existing positions
             self.exchange.update_positions(current_prices, funding_rates)
+
+            # Time stop: close stalled positions
+            for pid in list(self.exchange.positions.keys()):
+                if pid not in position_open_bars:
+                    position_open_bars[pid] = i
+                if i - position_open_bars[pid] >= time_stop_bars:
+                    pos = self.exchange.positions[pid]
+                    price = current_prices.get(pos.symbol, pos.entry_price)
+                    self.exchange.close_position(pid, price, "TIME_STOP")
+                    del position_open_bars[pid]
 
             # Sync risk manager equity with exchange
             self.risk_mgr.state.equity = self.exchange.equity

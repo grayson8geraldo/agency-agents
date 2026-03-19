@@ -127,9 +127,9 @@ class VirtualExchange:
             if size_usd <= 0:
                 return None
 
-        # Lock margin and charge taker fee (market order)
+        # Lock margin and charge maker fee (limit order at current price)
         self.balance -= margin
-        fee = size_usd * self.config.TAKER_FEE
+        fee = size_usd * self.config.MAKER_FEE
         self.balance -= fee
         self.total_fees_paid += fee
 
@@ -249,8 +249,8 @@ class VirtualExchange:
         else:
             raw_pnl = (pos.entry_price - fill_price) / pos.entry_price * pos.size_usd
 
-        # Exit fee
-        fee = pos.size_usd * self.config.TAKER_FEE
+        # Exit fee (maker)
+        fee = pos.size_usd * self.config.MAKER_FEE
         self.total_fees_paid += fee
 
         net_pnl = raw_pnl - fee - pos.funding_paid
