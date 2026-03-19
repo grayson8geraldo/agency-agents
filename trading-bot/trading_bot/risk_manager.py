@@ -1,4 +1,4 @@
-"""Risk management — SL/TP calculation, position sizing, kill switches."""
+"""Forex risk management — SL/TP in pips, lot sizing, kill switches."""
 
 from __future__ import annotations
 
@@ -6,33 +6,44 @@ import logging
 from decimal import Decimal, ROUND_DOWN
 from typing import Optional
 
-from .config import RiskConfig
+from .config import RiskConfig, get_pip_size, get_pip_value
 from .models import Bias, SessionAnalysis, TradeSignal, ZoneType
 
 logger = logging.getLogger(__name__)
 
 
 class RiskManager:
-    """Validates and adjusts trade signals for risk compliance."""
+    """Validates and adjusts trade signals for risk compliance (forex)."""
 
-    def __init__(self, config: RiskConfig):
+    def __init__(self, config: RiskConfig, symbol: str = "EURUSD=X"):
         self.config = config
+        self.symbol = symbol
+        self.pip_size = get_pip_size(symbol)
+        self.pip_value_per_lot = get_pip_value(symbol)
+
+    def price_to_pips(self, price_diff: Decimal) -> Decimal:
+        """Convert a price difference to pips."""
+        return abs(price_diff) / self.pip_size
+
+    def pips_to_price(self, pips: Decimal) -> Decimal:
+        """Convert pips to price difference."""
+        return pips * self.pip_size
 
     def calculate_stop_loss(self, signal: TradeSignal) -> Decimal:
         """
         Calculate precise SL based on zone type.
-        - Order Block: SL beyond zone extreme + buffer
+        - Order Block: SL beyond zone extreme + buffer in pips
         - FVG: SL at 50% of FVG
         """
         zone = signal.zone
-        buffer = self.config.sl_buffer_pct
+        buffer = self.pips_to_price(self.config.sl_buffer_pips)
 
         if zone.zone_type == ZoneType.ORDER_BLOCK:
             if signal.direction == Bias.LONG:
-                return zone.low * (1 - buffer)
+                return zone.low - buffer
             else:
-                return zone.high * (1 + buffer)
-        else:  # FVG
+                return zone.high + buffer
+        else:  # FVG — SL at 50% of FVG
             return zone.midpoint
 
     def calculate_take_profit(
@@ -44,19 +55,17 @@ class RiskManager:
     ) -> Decimal:
         """
         Calculate TP using R:R ratio (1.5–2.2) with optional structural target.
+        Structural targets: Asia session high/low boundaries.
         """
         risk = abs(entry_price - stop_loss)
         rr = self.config.default_risk_reward
         rr_tp = entry_price + risk * rr if direction == Bias.LONG \
                 else entry_price - risk * rr
 
-        # Check structural target (Asia session boundary)
-        if session:
+        if session and session.asia.candles:
             if direction == Bias.LONG and session.asia.high > entry_price:
                 structural_tp = session.asia.high
-                # Use closer of structural and R:R target
                 if structural_tp < rr_tp:
-                    # Check if structural TP gives at least min R:R
                     structural_rr = abs(structural_tp - entry_price) / risk if risk else Decimal("0")
                     if structural_rr >= self.config.min_risk_reward:
                         rr_tp = structural_tp
@@ -69,31 +78,45 @@ class RiskManager:
 
         return rr_tp
 
-    def calculate_position_size(
+    def calculate_lot_size(
         self,
         equity: Decimal,
         entry_price: Decimal,
         stop_loss: Decimal,
     ) -> Decimal:
         """
-        Fixed fractional position sizing.
-        Position Size = (Equity * Risk%) / |Entry - SL|
+        Forex lot sizing based on risk.
+        Lot Size = Risk Amount / (SL in pips * pip value per lot)
+
+        For a $200 account with 1% risk = $2 risk per trade.
+        If SL = 20 pips, pip value = $0.10/pip (micro lot):
+            Lot Size = $2 / (20 * $10) = 0.01 lot (micro lot)
         """
         risk_amount = equity * self.config.risk_per_trade_pct
-        sl_distance = abs(entry_price - stop_loss)
+        sl_pips = self.price_to_pips(entry_price - stop_loss)
 
-        if sl_distance == 0:
+        if sl_pips == 0:
             return Decimal("0")
 
-        position_size = risk_amount / sl_distance
+        # Lot size = risk_amount / (sl_pips * pip_value_per_lot)
+        lot_size = risk_amount / (sl_pips * self.pip_value_per_lot)
 
-        # Cap at max risk
+        # Clamp to min/max lot size
+        lot_size = max(lot_size, self.config.min_lot_size)
+        lot_size = min(lot_size, self.config.max_lot_size)
+
+        # Round down to 2 decimal places (standard forex precision)
+        lot_size = lot_size.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+
+        # Final check: ensure risk doesn't exceed max
+        actual_risk = sl_pips * self.pip_value_per_lot * lot_size
         max_risk = equity * self.config.max_risk_per_trade_pct
-        max_size = max_risk / sl_distance
-        position_size = min(position_size, max_size)
+        if actual_risk > max_risk:
+            lot_size = (max_risk / (sl_pips * self.pip_value_per_lot)).quantize(
+                Decimal("0.01"), rounding=ROUND_DOWN,
+            )
 
-        # Round down to 8 decimal places (crypto precision)
-        return position_size.quantize(Decimal("0.00000001"), rounding=ROUND_DOWN)
+        return lot_size
 
     def validate_signal(
         self,
@@ -104,13 +127,14 @@ class RiskManager:
         peak_equity: Decimal,
         open_positions: int,
     ) -> tuple[bool, str]:
-        """Gate every trade through risk checks. Returns (valid, reason)."""
+        """Gate every trade through risk checks."""
         cfg = self.config
 
         # Kill switch: daily loss
-        daily_loss_pct = abs(daily_pnl / equity) if equity and daily_pnl < 0 else Decimal("0")
-        if daily_loss_pct >= cfg.max_daily_loss_pct:
-            return False, f"Kill switch: daily loss {daily_loss_pct:.1%} >= {cfg.max_daily_loss_pct:.1%}"
+        if equity > 0 and daily_pnl < 0:
+            daily_loss_pct = abs(daily_pnl / equity)
+            if daily_loss_pct >= cfg.max_daily_loss_pct:
+                return False, f"Kill switch: daily loss {daily_loss_pct:.1%} >= {cfg.max_daily_loss_pct:.1%}"
 
         # Kill switch: consecutive losses
         if consecutive_losses >= cfg.max_consecutive_losses:
@@ -142,7 +166,7 @@ class RiskManager:
         equity: Decimal,
         session: Optional[SessionAnalysis] = None,
     ) -> TradeSignal:
-        """Recalculate SL, TP, and position size with proper risk params."""
+        """Recalculate SL, TP with proper risk params."""
         sl = self.calculate_stop_loss(signal)
         tp = self.calculate_take_profit(signal.entry_price, sl, signal.direction, session)
 

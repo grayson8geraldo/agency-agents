@@ -1,4 +1,4 @@
-"""Virtual account — paper trading with simulated balance."""
+"""Virtual forex account — paper trading with simulated balance."""
 
 from __future__ import annotations
 
@@ -10,11 +10,12 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Optional
 
-from .models import Bias, Trade, TradeSignal, TradeStatus
+from .config import get_pair_name, get_pip_size, get_pip_value
+from .models import Bias, Candle, Trade, TradeSignal, TradeStatus
 
 logger = logging.getLogger(__name__)
 
-STATE_FILE = Path("trading_bot_state.json")
+STATE_FILE = Path("forex_bot_state.json")
 
 
 @dataclass
@@ -26,6 +27,7 @@ class AccountState:
     daily_start_equity: Decimal
     daily_pnl: Decimal = Decimal("0")
     total_pnl: Decimal = Decimal("0")
+    total_pnl_pips: Decimal = Decimal("0")
     consecutive_losses: int = 0
     total_trades: int = 0
     winning_trades: int = 0
@@ -56,9 +58,16 @@ class AccountState:
 
 
 class VirtualAccount:
-    """Paper trading account with persistent state."""
+    """Forex paper trading account with persistent state."""
 
-    def __init__(self, initial_balance: Decimal = Decimal("200.00")):
+    def __init__(
+        self,
+        initial_balance: Decimal = Decimal("200.00"),
+        symbol: str = "EURUSD=X",
+    ):
+        self.symbol = symbol
+        self.pip_size = get_pip_size(symbol)
+        self.pip_value_per_lot = get_pip_value(symbol)
         self.state = AccountState(
             initial_balance=initial_balance,
             balance=initial_balance,
@@ -80,26 +89,33 @@ class VirtualAccount:
     def open_trade(
         self,
         signal: TradeSignal,
-        position_size: Decimal,
+        lot_size: Decimal,
         risk_amount: Decimal,
         timestamp: datetime,
     ) -> Trade:
-        """Open a new virtual trade."""
+        """Open a new virtual forex trade."""
         self.state.total_trades += 1
         trade = Trade(
             id=self.state.total_trades,
             signal=signal,
-            position_size=position_size,
+            lot_size=lot_size,
             risk_amount=risk_amount,
+            pip_size=self.pip_size,
+            pip_value=self.pip_value_per_lot,
             status=TradeStatus.OPEN,
             entry_price=signal.entry_price,
             opened_at=timestamp,
         )
         self.state.current_trade = trade
+
+        sl_pips = abs(signal.entry_price - signal.stop_loss) / self.pip_size
+        tp_pips = abs(signal.take_profit - signal.entry_price) / self.pip_size
+
         logger.info(
-            f"TRADE OPENED #{trade.id}: {signal.direction.value} "
-            f"{position_size} @ {signal.entry_price}, "
-            f"SL={signal.stop_loss}, TP={signal.take_profit}"
+            f"TRADE #{trade.id}: {signal.direction.value} "
+            f"{get_pair_name(self.symbol)} {lot_size} lot @ {signal.entry_price:.5f}, "
+            f"SL={signal.stop_loss:.5f} ({sl_pips:.1f} pips), "
+            f"TP={signal.take_profit:.5f} ({tp_pips:.1f} pips)"
         )
         return trade
 
@@ -121,6 +137,7 @@ class VirtualAccount:
         self.state.equity = self.state.balance
         self.state.daily_pnl += trade.pnl
         self.state.total_pnl += trade.pnl
+        self.state.total_pnl_pips += trade.pnl_pips
 
         # Track wins/losses
         if trade.pnl > 0:
@@ -138,8 +155,8 @@ class VirtualAccount:
         self.state.current_trade = None
 
         logger.info(
-            f"TRADE CLOSED #{trade.id}: {reason.value}, "
-            f"exit={exit_price}, PnL=${trade.pnl:.2f}, "
+            f"CLOSED #{trade.id}: {reason.value}, "
+            f"exit={exit_price:.5f}, PnL=${trade.pnl:.2f} ({trade.pnl_pips:+.1f} pips), "
             f"balance=${self.state.balance:.2f}"
         )
         return trade
@@ -168,43 +185,55 @@ class VirtualAccount:
     def get_summary(self) -> str:
         """Get account summary string."""
         s = self.state
-        avg_pnl = s.total_pnl / s.total_trades if s.total_trades else Decimal("0")
+        pair_name = get_pair_name(self.symbol)
 
-        # Calculate average R:R of winning trades
+        avg_pnl = s.total_pnl / s.total_trades if s.total_trades else Decimal("0")
+        avg_pnl_pips = s.total_pnl_pips / s.total_trades if s.total_trades else Decimal("0")
+
         winning = [t for t in s.trade_history if t.pnl > 0]
-        avg_win_rr = (
-            sum(t.signal.risk_reward for t in winning) / len(winning)
-            if winning else Decimal("0")
-        )
+        losing = [t for t in s.trade_history if t.pnl < 0]
+        avg_win = sum(t.pnl for t in winning) / len(winning) if winning else Decimal("0")
+        avg_loss = sum(t.pnl for t in losing) / len(losing) if losing else Decimal("0")
+        avg_win_pips = sum(t.pnl_pips for t in winning) / len(winning) if winning else Decimal("0")
+        avg_loss_pips = sum(t.pnl_pips for t in losing) / len(losing) if losing else Decimal("0")
+
+        profit_factor = abs(sum(t.pnl for t in winning) / sum(t.pnl for t in losing)) \
+            if losing and sum(t.pnl for t in losing) != 0 else Decimal("0")
 
         lines = [
-            "=" * 50,
-            "       VIRTUAL ACCOUNT SUMMARY",
-            "=" * 50,
+            "=" * 55,
+            "       FOREX VIRTUAL ACCOUNT SUMMARY",
+            "=" * 55,
+            f"  Pair:             {pair_name}",
             f"  Initial Balance:  ${s.initial_balance:.2f}",
             f"  Current Balance:  ${s.balance:.2f}",
             f"  Total P&L:        ${s.total_pnl:+.2f} ({s.total_return_pct:+.1f}%)",
+            f"  Total P&L (pips): {s.total_pnl_pips:+.1f}",
             f"  Peak Equity:      ${s.peak_equity:.2f}",
             f"  Max Drawdown:     {s.max_drawdown_pct:.1f}%",
-            "-" * 50,
+            "-" * 55,
             f"  Total Trades:     {s.total_trades}",
             f"  Wins:             {s.winning_trades}",
             f"  Losses:           {s.losing_trades}",
             f"  Win Rate:         {s.win_rate:.1f}%",
-            f"  Avg P&L/Trade:    ${avg_pnl:+.2f}",
-            f"  Avg Win R:R:      {avg_win_rr:.2f}",
+            f"  Avg P&L/Trade:    ${avg_pnl:+.2f} ({avg_pnl_pips:+.1f} pips)",
+            f"  Avg Win:          ${avg_win:+.2f} ({avg_win_pips:+.1f} pips)",
+            f"  Avg Loss:         ${avg_loss:+.2f} ({avg_loss_pips:+.1f} pips)",
+            f"  Profit Factor:    {profit_factor:.2f}",
             f"  Consec. Losses:   {s.consecutive_losses}",
-            "=" * 50,
+            "=" * 55,
         ]
         return "\n".join(lines)
 
     def save_state(self, path: Path = STATE_FILE):
         """Save account state to JSON."""
         data = {
+            "symbol": self.symbol,
             "balance": str(self.state.balance),
             "equity": str(self.state.equity),
             "peak_equity": str(self.state.peak_equity),
             "total_pnl": str(self.state.total_pnl),
+            "total_pnl_pips": str(self.state.total_pnl_pips),
             "total_trades": self.state.total_trades,
             "winning_trades": self.state.winning_trades,
             "losing_trades": self.state.losing_trades,
@@ -219,17 +248,15 @@ class VirtualAccount:
         if not path.exists():
             return
         data = json.loads(path.read_text())
+        self.symbol = data.get("symbol", self.symbol)
         self.state.balance = Decimal(data["balance"])
         self.state.equity = Decimal(data["equity"])
         self.state.peak_equity = Decimal(data["peak_equity"])
         self.state.total_pnl = Decimal(data["total_pnl"])
+        self.state.total_pnl_pips = Decimal(data.get("total_pnl_pips", "0"))
         self.state.total_trades = data["total_trades"]
         self.state.winning_trades = data["winning_trades"]
         self.state.losing_trades = data["losing_trades"]
         self.state.consecutive_losses = data["consecutive_losses"]
         self.state.last_trade_date = data.get("last_trade_date")
         logger.info(f"State loaded: balance=${self.state.balance:.2f}")
-
-
-# Fix missing import for check_sl_tp
-from .models import Candle  # noqa: E402

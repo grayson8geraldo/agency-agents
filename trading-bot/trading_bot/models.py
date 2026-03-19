@@ -1,4 +1,4 @@
-"""Data models for the trading bot."""
+"""Data models for the forex trading bot."""
 
 from __future__ import annotations
 
@@ -152,18 +152,21 @@ class TradeSignal:
             self.risk_reward = reward / risk
 
 
-# ── Trade ──────────────────────────────────────────────────────────────────
+# ── Trade (Forex) ─────────────────────────────────────────────────────────
 
 @dataclass
 class Trade:
     id: int
     signal: TradeSignal
-    position_size: Decimal
-    risk_amount: Decimal
+    lot_size: Decimal       # Forex lot size (0.01 = micro lot)
+    risk_amount: Decimal    # Risk in USD
+    pip_size: Decimal       # Pip size for this pair
+    pip_value: Decimal      # Pip value per lot in USD
     status: TradeStatus = TradeStatus.OPEN
     entry_price: Decimal = Decimal("0")
     exit_price: Optional[Decimal] = None
     pnl: Decimal = Decimal("0")
+    pnl_pips: Decimal = Decimal("0")
     opened_at: Optional[datetime] = None
     closed_at: Optional[datetime] = None
 
@@ -171,7 +174,13 @@ class Trade:
         self.exit_price = exit_price
         self.closed_at = timestamp
         self.status = reason
+
+        # Calculate P&L in pips
         if self.signal.direction == Bias.LONG:
-            self.pnl = (exit_price - self.entry_price) * self.position_size
+            price_diff = exit_price - self.entry_price
         else:
-            self.pnl = (self.entry_price - exit_price) * self.position_size
+            price_diff = self.entry_price - exit_price
+
+        self.pnl_pips = price_diff / self.pip_size
+        # P&L in USD = pips * pip_value_per_lot * lot_size
+        self.pnl = self.pnl_pips * self.pip_value * self.lot_size

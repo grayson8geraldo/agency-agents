@@ -1,4 +1,4 @@
-"""Session detection — Asia, London, New York with liquidity sweep analysis."""
+"""Forex session detection — Asia, London, New York with liquidity sweep analysis."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import logging
 from datetime import datetime, time, timedelta
 from decimal import Decimal
 
-from .config import NY_TZ, UTC_TZ, ASIA_SESSION, LONDON_SESSION
+from .config import NY_TZ, UTC_TZ
 from .models import Bias, Candle, SessionAnalysis, SessionData
 
 logger = logging.getLogger(__name__)
@@ -14,36 +14,36 @@ logger = logging.getLogger(__name__)
 
 def _to_ny(dt: datetime) -> datetime:
     """Convert any datetime to NY timezone."""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC_TZ)
     return dt.astimezone(NY_TZ)
-
-
-def _ny_time(dt: datetime) -> time:
-    """Get NY-local time from a datetime."""
-    return _to_ny(dt).time()
 
 
 def _is_in_asia(candle: Candle, trade_date: datetime) -> bool:
     """
-    Asia session: previous day 19:00 → current day 00:00 NY.
-    This captures the Asian trading session as seen from NY time.
+    Asia/Tokyo session for forex: previous day 19:00 → current day 04:00 NY.
+    This covers the main Asian trading block as seen from New York.
     """
     ny_dt = _to_ny(candle.timestamp)
     ny_t = ny_dt.time()
     ny_date = ny_dt.date()
     trade_ny_date = _to_ny(trade_date).date()
 
-    # Previous day 19:00-23:59
     prev_date = trade_ny_date - timedelta(days=1)
+    # Previous day 19:00–23:59
     if ny_date == prev_date and ny_t >= time(19, 0):
         return True
-    # Current day 00:00-01:59 (tail of Asia)
+    # Current day 00:00–01:59 (end before London starts at 02:00)
     if ny_date == trade_ny_date and ny_t < time(2, 0):
         return True
     return False
 
 
 def _is_in_london(candle: Candle, trade_date: datetime) -> bool:
-    """London session: 02:00 → 05:00 NY (core impulse window)."""
+    """
+    London session core impulse window: 02:00 → 05:00 NY.
+    This is where London typically sweeps Asia's liquidity.
+    """
     ny_dt = _to_ny(candle.timestamp)
     ny_t = ny_dt.time()
     ny_date = ny_dt.date()
@@ -88,6 +88,22 @@ def build_session_data(name: str, candles: list[Candle]) -> SessionData:
     )
 
 
+def is_forex_trading_day(dt: datetime) -> bool:
+    """
+    Check if the given date is a forex trading day.
+    Forex market is closed Saturday 17:00 NY → Sunday 17:00 NY.
+    """
+    ny_dt = _to_ny(dt)
+    weekday = ny_dt.weekday()  # 0=Mon, 5=Sat, 6=Sun
+
+    # Saturday after 17:00 or all Sunday before 17:00
+    if weekday == 5 and ny_dt.time() >= time(17, 0):
+        return False
+    if weekday == 6 and ny_dt.time() < time(17, 0):
+        return False
+    return True
+
+
 def analyze_sessions(
     candles_15m: list[Candle],
     trade_date: datetime,
@@ -109,7 +125,7 @@ def analyze_sessions(
 
     if not asia_candles or not london_candles:
         logger.warning(
-            f"Missing session data for {trade_date.date()}: "
+            f"Missing session data for {_to_ny(trade_date).date()}: "
             f"Asia={len(asia_candles)}, London={len(london_candles)} candles"
         )
         return SessionAnalysis(
@@ -133,8 +149,8 @@ def analyze_sessions(
         bias = Bias.NO_TRADE
 
     logger.info(
-        f"Session analysis {trade_date.date()}: "
-        f"Asia [{asia.low}-{asia.high}], "
+        f"Session analysis {_to_ny(trade_date).date()}: "
+        f"Asia [{asia.low:.5f}–{asia.high:.5f}], "
         f"London swept_low={swept_low} swept_high={swept_high} → bias={bias.value}"
     )
 

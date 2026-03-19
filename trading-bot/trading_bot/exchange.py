@@ -1,4 +1,4 @@
-"""Exchange data fetcher — real market data via public API (no auth required)."""
+"""Forex data fetcher — real market data via yfinance (free, no auth)."""
 
 from __future__ import annotations
 
@@ -7,62 +7,101 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Optional
 
-import ccxt
+import pandas as pd
+import yfinance as yf
 
-from .config import UTC_TZ
+from .config import UTC_TZ, get_pair_name
 from .models import Candle
 
 logger = logging.getLogger(__name__)
 
-# Timeframe → milliseconds
-TF_MS = {
-    "1m": 60_000,
-    "5m": 300_000,
-    "15m": 900_000,
-    "1h": 3_600_000,
-    "4h": 14_400_000,
-    "1d": 86_400_000,
+# yfinance interval mapping
+YF_INTERVALS = {
+    "1m": "1m",
+    "5m": "5m",
+    "15m": "15m",
+    "30m": "30m",
+    "1h": "1h",
+    "1d": "1d",
+}
+
+# yfinance max period per interval
+# 1m: 7 days, 5m: 60 days, 15m: 60 days, 1h: 730 days
+YF_MAX_DAYS = {
+    "1m": 7,
+    "5m": 60,
+    "15m": 60,
+    "30m": 60,
+    "1h": 730,
+    "1d": 10000,
 }
 
 
-class ExchangeFetcher:
-    """Fetches real OHLCV data from Binance public API (no API key needed)."""
+class ForexFetcher:
+    """Fetches real forex OHLCV data via Yahoo Finance (no API key needed)."""
 
-    def __init__(self, exchange_id: str = "binance"):
-        exchange_class = getattr(ccxt, exchange_id)
-        self.exchange = exchange_class({"enableRateLimit": True})
-        self._markets_loaded = False
-        logger.info(f"Initialized {exchange_id} fetcher (public data only)")
-
-    def _ensure_markets(self):
-        if not self._markets_loaded:
-            self.exchange.load_markets()
-            self._markets_loaded = True
+    def __init__(self):
+        logger.info("Initialized Yahoo Finance forex fetcher")
 
     def fetch_candles(
         self,
         symbol: str,
         timeframe: str,
-        since: Optional[datetime] = None,
-        limit: int = 500,
+        start: Optional[datetime] = None,
+        end: Optional[datetime] = None,
+        period: Optional[str] = None,
     ) -> list[Candle]:
-        """Fetch OHLCV candles from exchange."""
-        self._ensure_markets()
-        since_ms = int(since.timestamp() * 1000) if since else None
-        raw = self.exchange.fetch_ohlcv(
-            symbol, timeframe, since=since_ms, limit=limit
-        )
+        """
+        Fetch OHLCV candles for a forex pair.
+
+        Args:
+            symbol: Yahoo Finance ticker (e.g. "EURUSD=X")
+            timeframe: Candle interval ("5m", "15m", "1h", etc.)
+            start: Start datetime (UTC)
+            end: End datetime (UTC)
+            period: Alternative to start/end (e.g. "5d", "1mo")
+        """
+        interval = YF_INTERVALS.get(timeframe, timeframe)
+        ticker = yf.Ticker(symbol)
+        pair_name = get_pair_name(symbol)
+
+        try:
+            if start and end:
+                df = ticker.history(
+                    interval=interval,
+                    start=start.strftime("%Y-%m-%d"),
+                    end=(end + timedelta(days=1)).strftime("%Y-%m-%d"),
+                )
+            elif period:
+                df = ticker.history(interval=interval, period=period)
+            else:
+                df = ticker.history(interval=interval, period="5d")
+        except Exception as e:
+            logger.error(f"Failed to fetch {pair_name} {timeframe}: {e}")
+            return []
+
+        if df.empty:
+            logger.warning(f"No data returned for {pair_name} {timeframe}")
+            return []
+
         candles = []
-        for row in raw:
-            ts, o, h, l, c, v = row
+        for idx, row in df.iterrows():
+            ts = idx.to_pydatetime()
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=UTC_TZ)
+            else:
+                ts = ts.astimezone(UTC_TZ)
+
             candles.append(Candle(
-                timestamp=datetime.fromtimestamp(ts / 1000, tz=UTC_TZ),
-                open=Decimal(str(o)),
-                high=Decimal(str(h)),
-                low=Decimal(str(l)),
-                close=Decimal(str(c)),
-                volume=Decimal(str(v)),
+                timestamp=ts,
+                open=Decimal(str(round(row["Open"], 6))),
+                high=Decimal(str(round(row["High"], 6))),
+                low=Decimal(str(round(row["Low"], 6))),
+                close=Decimal(str(round(row["Close"], 6))),
+                volume=Decimal(str(int(row.get("Volume", 0)))),
             ))
+
+        logger.info(f"Fetched {len(candles)} {timeframe} candles for {pair_name}")
         return candles
 
     def fetch_candles_range(
@@ -72,36 +111,44 @@ class ExchangeFetcher:
         start: datetime,
         end: datetime,
     ) -> list[Candle]:
-        """Fetch all candles in a date range (handles pagination)."""
+        """
+        Fetch all candles in a date range.
+        Handles yfinance limitations on max range per interval.
+        """
+        max_days = YF_MAX_DAYS.get(timeframe, 60)
         all_candles: list[Candle] = []
-        current = start
-        tf_ms = TF_MS.get(timeframe, 300_000)
+        current_start = start
 
-        while current < end:
-            batch = self.fetch_candles(symbol, timeframe, since=current, limit=1000)
-            if not batch:
-                break
+        while current_start < end:
+            chunk_end = min(current_start + timedelta(days=max_days - 1), end)
+
+            batch = self.fetch_candles(
+                symbol, timeframe,
+                start=current_start, end=chunk_end,
+            )
 
             for c in batch:
-                if c.timestamp >= end:
+                if c.timestamp < start.astimezone(UTC_TZ):
+                    continue
+                if c.timestamp > end.astimezone(UTC_TZ):
                     break
                 if not all_candles or c.timestamp > all_candles[-1].timestamp:
                     all_candles.append(c)
 
-            last_ts = batch[-1].timestamp
-            next_ts = last_ts + timedelta(milliseconds=tf_ms)
-            if next_ts <= current:
-                break
-            current = next_ts
+            current_start = chunk_end + timedelta(days=1)
 
+        pair_name = get_pair_name(symbol)
         logger.info(
-            f"Fetched {len(all_candles)} {timeframe} candles for {symbol} "
+            f"Fetched {len(all_candles)} {timeframe} candles for {pair_name} "
             f"from {start.date()} to {end.date()}"
         )
         return all_candles
 
     def get_current_price(self, symbol: str) -> Decimal:
         """Get current market price."""
-        self._ensure_markets()
-        ticker = self.exchange.fetch_ticker(symbol)
-        return Decimal(str(ticker["last"]))
+        ticker = yf.Ticker(symbol)
+        data = ticker.history(period="1d", interval="1m")
+        if data.empty:
+            raise ValueError(f"No current price data for {symbol}")
+        last_close = data["Close"].iloc[-1]
+        return Decimal(str(round(last_close, 6)))

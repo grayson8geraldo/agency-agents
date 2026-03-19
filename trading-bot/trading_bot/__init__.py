@@ -1,1 +1,1 @@
-"""ORB + Session Analysis Trading Bot — paper trading on real market data."""
+"""ORB + Session Analysis Forex Trading Bot — paper trading on real market data."""

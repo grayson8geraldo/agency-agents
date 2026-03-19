@@ -1,4 +1,4 @@
-"""ORB + Session Analysis strategy engine."""
+"""ORB + Session Analysis strategy engine for forex."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from datetime import datetime, time, timedelta
 from decimal import Decimal
 from typing import Optional
 
-from .config import NY_TZ, StrategyConfig
+from .config import NY_TZ, StrategyConfig, get_pip_size
 from .models import (
     Bias, Candle, Displacement, ORBRange, SessionAnalysis,
     TradeSignal, TriggerType, Zone, ZoneType,
@@ -25,25 +25,47 @@ def _to_ny(dt: datetime) -> datetime:
 def compute_orb(candles_15m: list[Candle], trade_date: datetime) -> ORBRange:
     """
     Extract the 09:30–09:45 NY 15-minute candle as the ORB range.
+    For forex, we look for the candle at or closest to 09:30 NY.
     """
     trade_ny_date = _to_ny(trade_date).date()
+    orb_start = time(9, 30)
+    orb_end = time(9, 45)
 
+    best_candle = None
     for c in candles_15m:
         ny_dt = _to_ny(c.timestamp)
-        if ny_dt.date() == trade_ny_date and ny_dt.time() == time(9, 30):
-            orb = ORBRange(
-                high=c.high,
-                low=c.low,
-                timestamp=c.timestamp,
-            )
-            logger.info(f"ORB range: [{orb.low} - {orb.high}]")
-            return orb
+        if ny_dt.date() != trade_ny_date:
+            continue
+        ny_t = ny_dt.time()
+        if orb_start <= ny_t < orb_end:
+            best_candle = c
+            break
 
-    logger.warning(f"No ORB candle found for {trade_ny_date}")
-    return ORBRange(
-        high=Decimal("0"), low=Decimal("0"),
-        timestamp=trade_date, is_valid=False,
+    if best_candle is None:
+        # Fallback: use the 15m candle closest to 09:30
+        for c in candles_15m:
+            ny_dt = _to_ny(c.timestamp)
+            if ny_dt.date() != trade_ny_date:
+                continue
+            ny_t = ny_dt.time()
+            if time(9, 15) <= ny_t <= time(9, 45):
+                best_candle = c
+                break
+
+    if best_candle is None:
+        logger.warning(f"No ORB candle found for {trade_ny_date}")
+        return ORBRange(
+            high=Decimal("0"), low=Decimal("0"),
+            timestamp=trade_date, is_valid=False,
+        )
+
+    orb = ORBRange(
+        high=best_candle.high,
+        low=best_candle.low,
+        timestamp=best_candle.timestamp,
     )
+    logger.info(f"ORB range: [{orb.low:.5f} – {orb.high:.5f}]")
+    return orb
 
 
 # ── Displacement Detection ────────────────────────────────────────────────
@@ -94,8 +116,8 @@ def detect_displacement(
         for group in groups:
             if group[-1].close > orb.high:
                 logger.info(
-                    f"Bullish displacement detected: {len(group)} candles, "
-                    f"broke ORB high {orb.high}"
+                    f"Bullish displacement: {len(group)} candles, "
+                    f"broke ORB high {orb.high:.5f}"
                 )
                 return Displacement("bullish", group, broke_orb=True)
 
@@ -108,14 +130,12 @@ def detect_displacement(
         for group in groups:
             if group[-1].close < orb.low:
                 logger.info(
-                    f"Bearish displacement detected: {len(group)} candles, "
-                    f"broke ORB low {orb.low}"
+                    f"Bearish displacement: {len(group)} candles, "
+                    f"broke ORB low {orb.low:.5f}"
                 )
                 return Displacement("bearish", group, broke_orb=True)
 
     elif bias == Bias.CONTINUATION:
-        # For continuation, try both directions — use the one that matches
-        # the London move direction
         for bullish in [True, False]:
             groups = _find_consecutive_directional(
                 candles_5m, bullish=bullish,
@@ -140,7 +160,7 @@ def find_order_block(
     displacement: Displacement,
 ) -> Optional[Zone]:
     """
-    Find the last opposite candle before the impulse.
+    Find the last opposite candle before the impulse (Order Block).
     For bullish: last bearish candle before the bullish run.
     For bearish: last bullish candle before the bearish run.
     """
@@ -176,8 +196,8 @@ def find_fvg(
 ) -> Optional[Zone]:
     """
     Find Fair Value Gap within the impulse candles.
-    FVG = gap between candle[i-1] high and candle[i+1] low (bullish)
-         or candle[i-1] low and candle[i+1] high (bearish).
+    FVG = gap between candle[i-1].high and candle[i+1].low (bullish)
+         or candle[i-1].low and candle[i+1].high (bearish).
     """
     imp = displacement.candles
     if len(imp) < 3:
@@ -209,7 +229,6 @@ def identify_zone(
     ob = find_order_block(candles_5m, displacement)
     fvg = find_fvg(candles_5m, displacement)
 
-    # Prefer the zone that is closer to current price (more likely to be hit)
     if ob and fvg:
         last_close = displacement.candles[-1].close
         ob_dist = abs(last_close - ob.midpoint)
@@ -219,16 +238,14 @@ def identify_zone(
         zone = ob or fvg
 
     if zone:
-        logger.info(f"Zone identified: {zone.zone_type.value} [{zone.low}-{zone.high}]")
+        logger.info(f"Zone: {zone.zone_type.value} [{zone.low:.5f}–{zone.high:.5f}]")
     return zone
 
 
 # ── Entry Trigger ─────────────────────────────────────────────────────────
 
 def detect_engulfing(prev: Candle, curr: Candle, direction: str) -> bool:
-    """
-    Engulfing pattern: current candle body fully covers previous candle body.
-    """
+    """Engulfing pattern: current candle body fully covers previous candle body."""
     if direction == "bullish":
         return (curr.is_bullish and
                 curr.body_high > prev.body_high and
@@ -279,7 +296,6 @@ def check_entry_trigger(
     """
     direction = displacement.direction
 
-    # Find candles after displacement that are in the zone
     last_impulse_ts = displacement.candles[-1].timestamp
     post_displacement = [c for c in candles_5m if c.timestamp > last_impulse_ts]
 
@@ -290,10 +306,10 @@ def check_entry_trigger(
     zone_candles = []
     for c in post_displacement:
         if direction == "bullish":
-            if c.low <= zone.high:  # Price reached the zone
+            if c.low <= zone.high:
                 zone_candles.append(c)
         else:
-            if c.high >= zone.low:  # Price reached the zone
+            if c.high >= zone.low:
                 zone_candles.append(c)
 
     if not zone_candles:
@@ -325,14 +341,13 @@ def generate_signal(
     config: StrategyConfig,
 ) -> Optional[TradeSignal]:
     """
-    Run the full ORB + Session Analysis strategy pipeline for a given trade date.
-
+    Run the full ORB + Session Analysis strategy pipeline.
     Returns a TradeSignal if all conditions are met, None otherwise.
     """
     bias = session_analysis.bias
 
     if bias == Bias.NO_TRADE:
-        logger.info(f"No trade: session bias is NO_TRADE for {trade_date.date()}")
+        logger.info(f"No trade: session bias is NO_TRADE for {_to_ny(trade_date).date()}")
         return None
 
     # Step 1: Compute ORB range
@@ -350,42 +365,37 @@ def generate_signal(
     # Step 2: Detect displacement
     displacement = detect_displacement(candles_after_orb, orb, bias, config)
     if not displacement:
-        logger.debug(f"No displacement found for {trade_date.date()}")
+        logger.debug(f"No displacement for {_to_ny(trade_date).date()}")
         return None
 
     # Step 3: Identify zone
     zone = identify_zone(candles_5m, displacement)
     if not zone:
-        displacement.zone = None
-        logger.debug(f"No zone found for {trade_date.date()}")
+        logger.debug(f"No zone for {_to_ny(trade_date).date()}")
         return None
     displacement.zone = zone
 
     # Step 4: Check entry trigger
     trigger = check_entry_trigger(candles_5m, zone, displacement, config)
     if not trigger:
-        logger.debug(f"No entry trigger for {trade_date.date()}")
+        logger.debug(f"No entry trigger for {_to_ny(trade_date).date()}")
         return None
 
     trigger_type, signal_candle = trigger
-
-    # Determine entry price (close of signal candle)
     entry_price = signal_candle.close
-
-    # Direction for signal
     signal_direction = Bias.LONG if displacement.direction == "bullish" else Bias.SHORT
 
-    # SL and TP will be calculated by risk manager
-    # For now, provide raw zone-based SL
+    # Preliminary SL based on zone type
+    pip_size = get_pip_size(config.symbol)
     if zone.zone_type == ZoneType.ORDER_BLOCK:
         if signal_direction == Bias.LONG:
-            raw_sl = zone.low
+            raw_sl = zone.low - pip_size * 2  # 2 pip buffer
         else:
-            raw_sl = zone.high
-    else:  # FVG
-        raw_sl = zone.midpoint  # 50% of FVG
+            raw_sl = zone.high + pip_size * 2
+    else:  # FVG — SL at 50%
+        raw_sl = zone.midpoint
 
-    # Preliminary TP at R:R 2.0 (risk manager will refine)
+    # Preliminary TP at R:R 2.0
     risk = abs(entry_price - raw_sl)
     if signal_direction == Bias.LONG:
         raw_tp = entry_price + risk * 2
@@ -403,8 +413,8 @@ def generate_signal(
     )
 
     logger.info(
-        f"SIGNAL: {signal.direction.value} @ {entry_price}, "
-        f"SL={raw_sl}, TP={raw_tp}, R:R={signal.risk_reward:.2f}, "
+        f"SIGNAL: {signal.direction.value} {config.symbol} @ {entry_price:.5f}, "
+        f"SL={raw_sl:.5f}, TP={raw_tp:.5f}, R:R={signal.risk_reward:.2f}, "
         f"trigger={trigger_type.value}"
     )
     return signal

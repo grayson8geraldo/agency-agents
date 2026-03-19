@@ -1,4 +1,4 @@
-"""Entry point for ORB + Session Analysis trading bot."""
+"""Entry point for ORB + Session Analysis forex trading bot."""
 
 from __future__ import annotations
 
@@ -8,7 +8,8 @@ import sys
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-from .config import BotConfig, NY_TZ, UTC_TZ, RiskConfig, StrategyConfig
+from .config import BotConfig, NY_TZ, UTC_TZ, DEFAULT_PAIR, PAIR_CONFIG
+from .config import RiskConfig, StrategyConfig, get_pair_name
 
 
 def setup_logging(level: str = "INFO"):
@@ -17,19 +18,33 @@ def setup_logging(level: str = "INFO"):
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    # Quiet noisy libraries
-    logging.getLogger("ccxt").setLevel(logging.WARNING)
+    logging.getLogger("yfinance").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
+    logging.getLogger("peewee").setLevel(logging.WARNING)
+
+
+def resolve_symbol(pair: str) -> str:
+    """Resolve user-friendly pair name to Yahoo Finance ticker."""
+    # If already a valid ticker, return as-is
+    if pair in PAIR_CONFIG:
+        return pair
+    # Try common formats: EUR/USD → EURUSD=X, EURUSD → EURUSD=X
+    clean = pair.upper().replace("/", "").replace("-", "").replace(" ", "")
+    candidate = clean + "=X"
+    if candidate in PAIR_CONFIG:
+        return candidate
+    # Return the cleaned version with =X suffix
+    return candidate
 
 
 def cmd_live(args):
     """Run live paper trading."""
     from .engine import TradingEngine
 
+    symbol = resolve_symbol(args.symbol)
     config = BotConfig(
-        strategy=StrategyConfig(symbol=args.symbol),
+        strategy=StrategyConfig(symbol=symbol),
         risk=RiskConfig(initial_balance=Decimal(args.balance)),
-        exchange_id=args.exchange,
         poll_interval_seconds=args.interval,
     )
     engine = TradingEngine(config)
@@ -40,17 +55,17 @@ def cmd_backtest(args):
     """Run backtest on historical data."""
     from .backtester import Backtester
 
+    symbol = resolve_symbol(args.symbol)
     start = datetime.strptime(args.start, "%Y-%m-%d").replace(tzinfo=UTC_TZ)
     end = datetime.strptime(args.end, "%Y-%m-%d").replace(tzinfo=UTC_TZ)
 
     config = BotConfig(
-        strategy=StrategyConfig(symbol=args.symbol),
+        strategy=StrategyConfig(symbol=symbol),
         risk=RiskConfig(initial_balance=Decimal(args.balance)),
-        exchange_id=args.exchange,
         log_level=args.log_level,
     )
     backtester = Backtester(config)
-    account = backtester.run(start, end, args.symbol)
+    account = backtester.run(start, end, symbol)
 
     if args.save:
         account.save_state()
@@ -65,49 +80,59 @@ def cmd_status(args):
     print(account.get_summary())
 
 
+def cmd_pairs(args):
+    """List available forex pairs."""
+    print(f"\n{'Ticker':<12} {'Pair':<10} {'Pip Size':<12} {'Pip Value/Lot'}")
+    print("-" * 50)
+    for ticker, cfg in sorted(PAIR_CONFIG.items()):
+        print(f"{ticker:<12} {cfg['name']:<10} {cfg['pip']:<12} ${cfg['pip_value_per_lot']}")
+    print()
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="ORB + Session Analysis Trading Bot (Paper Trading)",
+        description="ORB + Session Analysis Forex Bot (Paper Trading on Real Data)",
     )
     parser.add_argument(
         "--log-level", default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
     )
 
-    subparsers = parser.add_subparsers(dest="command", help="Command to run")
+    subparsers = parser.add_subparsers(dest="command", help="Command")
 
     # ── live ──
-    live_parser = subparsers.add_parser("live", help="Run live paper trading")
-    live_parser.add_argument("--symbol", default="BTC/USDT", help="Trading pair")
-    live_parser.add_argument("--balance", default="200", help="Initial virtual balance")
-    live_parser.add_argument("--exchange", default="binance", help="Exchange to use")
-    live_parser.add_argument("--interval", type=int, default=30, help="Poll interval (seconds)")
+    live_p = subparsers.add_parser("live", help="Run live paper trading")
+    live_p.add_argument("--symbol", default="EUR/USD", help="Forex pair (e.g. EUR/USD, GBP/USD)")
+    live_p.add_argument("--balance", default="200", help="Initial virtual balance (USD)")
+    live_p.add_argument("--interval", type=int, default=30, help="Poll interval (seconds)")
 
     # ── backtest ──
-    bt_parser = subparsers.add_parser("backtest", help="Run backtest on historical data")
-    bt_parser.add_argument("--symbol", default="BTC/USDT", help="Trading pair")
-    bt_parser.add_argument("--balance", default="200", help="Initial virtual balance")
-    bt_parser.add_argument("--exchange", default="binance", help="Exchange to use")
-    bt_parser.add_argument(
-        "--start", required=True, help="Start date (YYYY-MM-DD)",
-    )
-    bt_parser.add_argument(
-        "--end", required=True, help="End date (YYYY-MM-DD)",
-    )
-    bt_parser.add_argument("--save", action="store_true", help="Save state after backtest")
+    bt_p = subparsers.add_parser("backtest", help="Backtest on real historical data")
+    bt_p.add_argument("--symbol", default="EUR/USD", help="Forex pair")
+    bt_p.add_argument("--balance", default="200", help="Initial virtual balance (USD)")
+    bt_p.add_argument("--start", required=True, help="Start date (YYYY-MM-DD)")
+    bt_p.add_argument("--end", required=True, help="End date (YYYY-MM-DD)")
+    bt_p.add_argument("--save", action="store_true", help="Save state after backtest")
 
     # ── status ──
     subparsers.add_parser("status", help="Show account status")
 
+    # ── pairs ──
+    subparsers.add_parser("pairs", help="List available forex pairs")
+
     args = parser.parse_args()
     setup_logging(args.log_level)
 
-    if args.command == "live":
-        cmd_live(args)
-    elif args.command == "backtest":
-        cmd_backtest(args)
-    elif args.command == "status":
-        cmd_status(args)
+    commands = {
+        "live": cmd_live,
+        "backtest": cmd_backtest,
+        "status": cmd_status,
+        "pairs": cmd_pairs,
+    }
+
+    handler = commands.get(args.command)
+    if handler:
+        handler(args)
     else:
         parser.print_help()
         sys.exit(1)
