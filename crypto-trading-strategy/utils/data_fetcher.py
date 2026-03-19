@@ -1,6 +1,6 @@
 """
 Real market data fetcher using ccxt.
-Pulls OHLCV data from Binance (public endpoints, no API key needed).
+Pulls OHLCV data from Bybit (public endpoints, no API key needed).
 """
 
 import time
@@ -26,21 +26,29 @@ def fetch_ohlcv(
     exchange: ccxt.Exchange = None,
 ) -> pd.DataFrame:
     """
-    Fetch OHLCV candle data from Binance Futures.
+    Fetch OHLCV candle data from Bybit Futures.
     Returns a DataFrame with columns: timestamp, open, high, low, close, volume.
+    Handles Bybit's 200-candle limit per request with proper pagination.
     """
     if exchange is None:
         exchange = get_exchange()
 
     since = int((datetime.now(timezone.utc) - timedelta(days=days)).timestamp() * 1000)
+    end_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
     all_candles = []
-    limit = 1000  # Binance max per request
+    limit = 200  # Bybit max per request
+    retries = 0
 
-    while True:
+    while since < end_ms:
         try:
             candles = exchange.fetch_ohlcv(symbol, timeframe, since=since, limit=limit)
+            retries = 0
         except ccxt.NetworkError:
-            time.sleep(2)
+            retries += 1
+            if retries > 4:
+                print(f"Network error fetching {symbol}, giving up after 4 retries")
+                break
+            time.sleep(2 ** retries)
             continue
         except ccxt.ExchangeError as e:
             print(f"Exchange error fetching {symbol}: {e}")
@@ -48,6 +56,9 @@ def fetch_ohlcv(
 
         if not candles:
             break
+
+        # Sort candles by timestamp (Bybit may return in reverse order)
+        candles.sort(key=lambda x: x[0])
 
         all_candles.extend(candles)
         since = candles[-1][0] + 1  # Next candle after last
