@@ -63,7 +63,7 @@ def fetch_ohlcv(
         all_candles.extend(candles)
         since = candles[-1][0] + 1  # Next candle after last
 
-        if len(candles) < limit:
+        if len(candles) < 2:
             break
 
         time.sleep(exchange.rateLimit / 1000)
