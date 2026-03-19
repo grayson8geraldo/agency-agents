@@ -127,7 +127,7 @@ class Backtester:
 
                 # Use a lookback window for signal evaluation
                 window = df.iloc[max(0, i - 200):i + 1].copy()
-                signal = self.signal_gen.evaluate_current(window, symbol)
+                signal = self.signal_gen.evaluate_current(window, symbol, global_idx=i)
 
                 if signal is None:
                     continue

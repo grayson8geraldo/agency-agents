@@ -66,10 +66,11 @@ class SignalGenerator:
 
         return signals
 
-    def evaluate_current(self, df: pd.DataFrame, symbol: str) -> TradingSignal | None:
+    def evaluate_current(self, df: pd.DataFrame, symbol: str, global_idx: int | None = None) -> TradingSignal | None:
         """
         Evaluate the most recent bar for a signal.
         Used in live/paper trading mode.
+        global_idx: the actual bar index in the full dataset (for cooldown tracking).
         """
         if len(df) < 200:
             return None
@@ -77,7 +78,8 @@ class SignalGenerator:
         df = add_all_indicators(df, self.config)
         row = df.iloc[-1]
         prev = df.iloc[-2]
-        return self._evaluate_bar(row, prev, symbol, df, len(df) - 1)
+        idx = global_idx if global_idx is not None else len(df) - 1
+        return self._evaluate_bar(row, prev, symbol, df, idx)
 
     def _evaluate_bar(
         self, row: pd.Series, prev: pd.Series, symbol: str, df: pd.DataFrame, idx: int
