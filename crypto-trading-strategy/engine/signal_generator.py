@@ -84,7 +84,7 @@ class SignalGenerator:
     ) -> TradingSignal | None:
         """Evaluate a single bar for entry signals."""
         # Skip if any indicator is NaN
-        required = ["ema_fast", "ema_slow", "ema_200", "rsi", "macd_hist", "atr",
+        required = ["ema_fast", "ema_slow", "ema_50", "rsi", "macd_hist", "atr",
                      "atr_percentile", "volume_ratio", "bb_upper", "bb_middle", "bb_lower"]
         for col in required:
             if pd.isna(row.get(col)):
@@ -92,12 +92,12 @@ class SignalGenerator:
 
         vol_regime = detect_volatility_regime(row["atr_percentile"], self.config)
 
-        # In extreme or high volatility, go flat — avoid choppy markets
+        # In extreme volatility, go flat
         if vol_regime == "EXTREME":
             return None
 
-        # Cooldown: skip if we traded this symbol recently (within last 8 bars = 2 hours)
-        cooldown = getattr(self.config, 'SIGNAL_COOLDOWN_BARS', 8)
+        # Cooldown: skip if we traded this symbol recently
+        cooldown = getattr(self.config, 'SIGNAL_COOLDOWN_BARS', 4)
         last_bar = getattr(self, '_last_signal_bar', {})
         if symbol in last_bar and (idx - last_bar[symbol]) < cooldown:
             return None
@@ -111,10 +111,6 @@ class SignalGenerator:
         elif short_signal and not long_signal:
             signal = self._build_signal(SignalType.SHORT, row, symbol, vol_regime, short_signal)
 
-        # Minimum confidence gate — don't trade low-conviction signals
-        if signal is not None and signal.confidence < getattr(self.config, 'MIN_CONFIDENCE', 0.70):
-            return None
-
         if signal is not None:
             if not hasattr(self, '_last_signal_bar'):
                 self._last_signal_bar = {}
@@ -127,8 +123,8 @@ class SignalGenerator:
         conditions = []
         score = 0
 
-        # Hard filter: price must be above EMA 200 (trend alignment)
-        if row["close"] < row["ema_200"]:
+        # Hard filter: price must be above EMA 50 (trend alignment)
+        if row["close"] < row["ema_50"]:
             return None
 
         # EMA crossover (or continuation)
@@ -173,8 +169,8 @@ class SignalGenerator:
         conditions = []
         score = 0
 
-        # Hard filter: price must be below EMA 200 (trend alignment)
-        if row["close"] > row["ema_200"]:
+        # Hard filter: price must be below EMA 50 (trend alignment)
+        if row["close"] > row["ema_50"]:
             return None
 
         if row["ema_fast"] < row["ema_slow"]:
@@ -237,9 +233,9 @@ class SignalGenerator:
         extra = max(0, len(reason_parts) - 2)
         confidence = min(1.0, 0.5 + extra * 0.1)
 
-        # Leverage from vol regime — more conservative
-        leverage_map = {"LOW": 10, "MEDIUM": 7, "HIGH": 5, "EXTREME": 3}
-        leverage = leverage_map.get(vol_regime, 7)
+        # Leverage from vol regime — balanced for small account growth
+        leverage_map = {"LOW": 15, "MEDIUM": 10, "HIGH": 7, "EXTREME": 3}
+        leverage = leverage_map.get(vol_regime, 10)
 
         return TradingSignal(
             signal_type=signal_type,
