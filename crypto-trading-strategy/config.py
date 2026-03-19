@@ -15,12 +15,6 @@ TRADING_PAIRS = [
     "BTC/USDT",
     "ETH/USDT",
     "SOL/USDT",
-    "XRP/USDT",
-    "DOGE/USDT",
-    "ADA/USDT",
-    "AVAX/USDT",
-    "LINK/USDT",
-"DOT/USDT",
 ]
 
 # ─── Leverage & Position Sizing ───────────────────────────────────
@@ -72,7 +66,7 @@ REWARD_RISK_RATIO = 2.5         # TP at 2.5× SL distance
 PARTIAL_TP_RATIO = 0.5          # Take 50% off at 1:1 RR
 TIME_STOP_HOURS = 4             # Close if no movement after 4h
 TRAILING_ACTIVATION_RR = 1.5    # Activate trailing at 1.5× risk
-MIN_CONFIDENCE = 0.60           # Skip signals below 60% confidence
+MIN_CONFIDENCE = 0.50           # Minimum signal confidence to trade
 
 # ─── Volatility Regime Thresholds (ATR percentile) ───────────────
 VOL_LOW = 25                    # Below 25th percentile
@@ -105,7 +99,7 @@ MIN_POSITION_SIZE_PCT = 0.01    # 1% of equity minimum ($2 on $200 account)
 # ─── Defensive Mode Triggers ─────────────────────────────────────
 SIGNAL_COOLDOWN_BARS = 4        # Minimum bars between signals per symbol (1h at 15m)
 
-CONSECUTIVE_LOSS_REDUCE = 5     # Reduce size after N consecutive losses (raised for multi-pair)
-CONSECUTIVE_LOSS_DEFENSIVE = 10 # Enter defensive mode after N losses (raised for multi-pair)
-CONSECUTIVE_LOSS_HALT = 15      # Halt trading after N losses (raised for multi-pair)
+CONSECUTIVE_LOSS_REDUCE = 3     # Reduce size after N consecutive losses
+CONSECUTIVE_LOSS_DEFENSIVE = 7  # Enter defensive mode after N losses
+CONSECUTIVE_LOSS_HALT = 10      # Halt trading after N losses
 CONSECUTIVE_WIN_RESTORE = 2     # Restore full size after N wins
