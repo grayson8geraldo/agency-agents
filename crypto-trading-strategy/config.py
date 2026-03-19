@@ -55,14 +55,14 @@ BB_STD = 2.0
 
 # ATR
 ATR_PERIOD = 14
-ATR_SL_MULTIPLIER = 1.5        # SL = ATR × this
+ATR_SL_MULTIPLIER = 2.0        # SL = ATR × this (wider to avoid premature stops)
 ATR_TRAILING_MULTIPLIER = 1.0  # Trailing stop distance
 
 # Volume
-VOLUME_THRESHOLD = 1.5          # Volume must be > 1.5× average
+VOLUME_THRESHOLD = 1.3          # Volume must be > 1.3× average
 
 # ─── Trade Management ────────────────────────────────────────────
-REWARD_RISK_RATIO = 2.0         # TP at 2× SL distance
+REWARD_RISK_RATIO = 2.5         # TP at 2.5× SL distance
 PARTIAL_TP_RATIO = 0.5          # Take 50% off at 1:1 RR
 TIME_STOP_HOURS = 4             # Close if no movement after 4h
 TRAILING_ACTIVATION_RR = 1.5    # Activate trailing at 1.5× risk
@@ -93,9 +93,12 @@ KELLY_FRACTION = 0.5            # Half-Kelly for safety
 MIN_TRADES_FOR_KELLY = 10       # Minimum trades before using Kelly sizing
 DEFAULT_WIN_RATE = 0.58         # Assumed win rate before enough data
 DEFAULT_WIN_LOSS_RATIO = 2.0    # Assumed avg_win/avg_loss
-MIN_POSITION_SIZE_PCT = 0.15    # Minimum 15% of equity per trade (aggressive for small acct)
+MIN_POSITION_SIZE_PCT = 0.0     # No forced minimum — let Kelly decide
 
 # ─── Defensive Mode Triggers ─────────────────────────────────────
+SIGNAL_COOLDOWN_BARS = 8        # Minimum bars between signals per symbol (2h at 15m)
+MIN_CONFIDENCE = 0.70           # Skip signals below this confidence
+
 CONSECUTIVE_LOSS_REDUCE = 2     # Reduce size after N consecutive losses
 CONSECUTIVE_LOSS_DEFENSIVE = 3  # Enter defensive mode after N losses
 CONSECUTIVE_LOSS_HALT = 5       # Halt trading after N losses

@@ -84,31 +84,52 @@ class SignalGenerator:
     ) -> TradingSignal | None:
         """Evaluate a single bar for entry signals."""
         # Skip if any indicator is NaN
-        required = ["ema_fast", "ema_slow", "rsi", "macd_hist", "atr", "atr_percentile", "volume_ratio"]
+        required = ["ema_fast", "ema_slow", "ema_200", "rsi", "macd_hist", "atr",
+                     "atr_percentile", "volume_ratio", "bb_upper", "bb_lower"]
         for col in required:
             if pd.isna(row.get(col)):
                 return None
 
         vol_regime = detect_volatility_regime(row["atr_percentile"], self.config)
 
-        # In extreme volatility, go flat
+        # In extreme or high volatility, go flat — avoid choppy markets
         if vol_regime == "EXTREME":
+            return None
+
+        # Cooldown: skip if we traded this symbol recently (within last 8 bars = 2 hours)
+        cooldown = getattr(self.config, 'SIGNAL_COOLDOWN_BARS', 8)
+        last_bar = getattr(self, '_last_signal_bar', {})
+        if symbol in last_bar and (idx - last_bar[symbol]) < cooldown:
             return None
 
         long_signal = self._check_long(row, prev)
         short_signal = self._check_short(row, prev)
 
+        signal = None
         if long_signal and not short_signal:
-            return self._build_signal(SignalType.LONG, row, symbol, vol_regime, long_signal)
+            signal = self._build_signal(SignalType.LONG, row, symbol, vol_regime, long_signal)
         elif short_signal and not long_signal:
-            return self._build_signal(SignalType.SHORT, row, symbol, vol_regime, short_signal)
+            signal = self._build_signal(SignalType.SHORT, row, symbol, vol_regime, short_signal)
 
-        return None
+        # Minimum confidence gate — don't trade low-conviction signals
+        if signal is not None and signal.confidence < getattr(self.config, 'MIN_CONFIDENCE', 0.70):
+            return None
+
+        if signal is not None:
+            if not hasattr(self, '_last_signal_bar'):
+                self._last_signal_bar = {}
+            self._last_signal_bar[symbol] = idx
+
+        return signal
 
     def _check_long(self, row: pd.Series, prev: pd.Series) -> str | None:
         """Check for long entry conditions. Returns reason string or None."""
         conditions = []
         score = 0
+
+        # Trend filter: price must be above EMA 200 for longs
+        if row["close"] < row["ema_200"]:
+            return None
 
         # EMA crossover (or continuation)
         if row["ema_fast"] > row["ema_slow"]:
@@ -137,8 +158,14 @@ class SignalGenerator:
             conditions.append(f"VOL={row['volume_ratio']:.1f}x")
             score += 1
 
-        # Need at least 2 confirmations for a signal
-        if score >= 2:
+        # Bollinger Band confirmation: price near lower band = good long entry
+        bb_range = row["bb_upper"] - row["bb_lower"]
+        if bb_range > 0 and (row["close"] - row["bb_lower"]) / bb_range < 0.35:
+            conditions.append("BB_LOW")
+            score += 1
+
+        # Need at least 3 confirmations for a signal
+        if score >= 3:
             return " | ".join(conditions)
         return None
 
@@ -146,6 +173,10 @@ class SignalGenerator:
         """Check for short entry conditions. Returns reason string or None."""
         conditions = []
         score = 0
+
+        # Trend filter: price must be below EMA 200 for shorts
+        if row["close"] > row["ema_200"]:
+            return None
 
         if row["ema_fast"] < row["ema_slow"]:
             conditions.append("EMA_BEAR")
@@ -169,6 +200,12 @@ class SignalGenerator:
             conditions.append(f"VOL={row['volume_ratio']:.1f}x")
             score += 1
 
+        # Bollinger Band confirmation: price near upper band = good short entry
+        bb_range = row["bb_upper"] - row["bb_lower"]
+        if bb_range > 0 and (row["bb_upper"] - row["close"]) / bb_range < 0.35:
+            conditions.append("BB_HIGH")
+            score += 1
+
         if score >= 3:
             return " | ".join(conditions)
         return None
@@ -185,22 +222,26 @@ class SignalGenerator:
         entry = row["close"]
         atr = row["atr"]
 
-        if signal_type == SignalType.LONG:
-            sl = entry - atr * self.config.ATR_SL_MULTIPLIER
-            tp = entry + atr * self.config.ATR_SL_MULTIPLIER * self.config.REWARD_RISK_RATIO
-        else:
-            sl = entry + atr * self.config.ATR_SL_MULTIPLIER
-            tp = entry - atr * self.config.ATR_SL_MULTIPLIER * self.config.REWARD_RISK_RATIO
+        # Scale ATR multiplier by volatility regime — wider stops in volatile markets
+        vol_sl_scale = {"LOW": 1.0, "MEDIUM": 1.2, "HIGH": 1.5, "EXTREME": 2.0}
+        sl_mult = self.config.ATR_SL_MULTIPLIER * vol_sl_scale.get(vol_regime, 1.2)
 
-        # Confidence based on how many extra confirmations
+        if signal_type == SignalType.LONG:
+            sl = entry - atr * sl_mult
+            tp = entry + atr * sl_mult * self.config.REWARD_RISK_RATIO
+        else:
+            sl = entry + atr * sl_mult
+            tp = entry - atr * sl_mult * self.config.REWARD_RISK_RATIO
+
+        # Confidence based on how many extra confirmations (3 is new minimum)
         base_conf = 0.6
         reason_parts = reason.split(" | ")
-        extra = len(reason_parts) - 2  # 2 is minimum
+        extra = len(reason_parts) - 3
         confidence = min(1.0, base_conf + extra * 0.1)
 
-        # Leverage from vol regime
-        leverage_map = {"LOW": 15, "MEDIUM": 10, "HIGH": 7, "EXTREME": 3}
-        leverage = leverage_map.get(vol_regime, 10)
+        # Leverage from vol regime — more conservative
+        leverage_map = {"LOW": 10, "MEDIUM": 7, "HIGH": 5, "EXTREME": 3}
+        leverage = leverage_map.get(vol_regime, 7)
 
         return TradingSignal(
             signal_type=signal_type,

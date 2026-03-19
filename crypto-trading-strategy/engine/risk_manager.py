@@ -159,10 +159,6 @@ class RiskManager:
         # Never more than equity × max leverage
         size = min(size, self.state.equity * leverage)
 
-        # Minimum position size for small accounts
-        min_size = self.state.equity * getattr(self.config, 'MIN_POSITION_SIZE_PCT', 0.15) * leverage
-        size = max(size, min_size)
-
         # Cap at max risk × leverage (absolute cap)
         max_absolute = self.state.equity * max_risk * leverage
         size = min(size, max_absolute)
