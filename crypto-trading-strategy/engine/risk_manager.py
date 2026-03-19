@@ -259,9 +259,13 @@ class RiskManager:
         self.update_mode()
 
     def new_day(self):
-        """Reset daily counters."""
+        """Reset daily counters and allow recovery from consecutive loss halt."""
         self.state.day_start_equity = self.state.equity
         self.state.daily_pnl = 0.0
+        # Allow recovery: reset consecutive losses on new day so strategy can resume
+        if self.state.consecutive_losses >= self.config.CONSECUTIVE_LOSS_HALT:
+            self.state.consecutive_losses = 0
+            self.update_mode()
 
     def new_week(self):
         """Reset weekly counters."""
