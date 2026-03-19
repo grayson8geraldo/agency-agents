@@ -161,8 +161,8 @@ class SignalGenerator:
             conditions.append("BB_MID+")
             score += 1
 
-        # Need at least 2 confirmations (EMA200 is the quality gate)
-        if score >= 2:
+        # Need at least 3 confirmations for high-quality entries
+        if score >= 3:
             return " | ".join(conditions)
         return None
 
@@ -203,7 +203,7 @@ class SignalGenerator:
             conditions.append("BB_MID-")
             score += 1
 
-        if score >= 2:
+        if score >= 3:
             return " | ".join(conditions)
         return None
 
@@ -230,10 +230,10 @@ class SignalGenerator:
             sl = entry + atr * sl_mult
             tp = entry - atr * sl_mult * self.config.REWARD_RISK_RATIO
 
-        # Confidence: base 0.5 at 2 confirmations, +0.1 per extra
+        # Confidence: base 0.6 at 3 confirmations, +0.1 per extra
         reason_parts = reason.split(" | ")
-        extra = max(0, len(reason_parts) - 2)
-        confidence = min(1.0, 0.5 + extra * 0.1)
+        extra = max(0, len(reason_parts) - 3)
+        confidence = min(1.0, 0.6 + extra * 0.1)
 
         # Leverage from vol regime — balanced for small account growth
         leverage_map = {"LOW": 15, "MEDIUM": 10, "HIGH": 7, "EXTREME": 3}

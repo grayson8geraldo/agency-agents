@@ -148,11 +148,18 @@ class RiskManager:
         # Primary: risk-based allocation
         size = self.state.equity * max_risk * leverage * confidence
 
-        # Secondary cap: Kelly criterion (only after enough trades)
+        # Secondary cap: Kelly criterion (only when proven profitable edge)
         kelly = self.kelly_fraction()
         if self.state.total_trades >= self.config.MIN_TRADES_FOR_KELLY and kelly > 0:
-            kelly_cap = self.state.equity * kelly * leverage
-            size = min(size, kelly_cap)
+            # Only cap by Kelly if win rate is above breakeven for the R:R ratio
+            if self.avg_loss != 0:
+                wl_ratio = self.avg_win / abs(self.avg_loss)
+                breakeven_wr = 1.0 / (1.0 + wl_ratio)
+            else:
+                breakeven_wr = 0.5
+            if self.win_rate > breakeven_wr:
+                kelly_cap = self.state.equity * kelly * leverage
+                size = min(size, kelly_cap)
 
         # Reduce for consecutive losses
         if self.state.consecutive_losses >= self.config.CONSECUTIVE_LOSS_DEFENSIVE:

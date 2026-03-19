@@ -59,7 +59,7 @@ ATR_SL_MULTIPLIER = 2.0        # SL = ATR × this (wider to avoid premature stop
 ATR_TRAILING_MULTIPLIER = 1.0  # Trailing stop distance
 
 # Volume
-VOLUME_THRESHOLD = 1.3          # Volume must be > 1.3× average
+VOLUME_THRESHOLD = 1.5          # Volume must be > 1.5× average (stronger confirmation)
 
 # ─── Trade Management ────────────────────────────────────────────
 REWARD_RISK_RATIO = 2.5         # TP at 2.5× SL distance
@@ -96,9 +96,9 @@ DEFAULT_WIN_LOSS_RATIO = 2.0    # Assumed avg_win/avg_loss
 MIN_POSITION_SIZE_PCT = 0.01    # 1% of equity minimum ($2 on $200 account)
 
 # ─── Defensive Mode Triggers ─────────────────────────────────────
-SIGNAL_COOLDOWN_BARS = 4        # Minimum bars between signals per symbol (1h at 15m)
+SIGNAL_COOLDOWN_BARS = 8        # Minimum bars between signals per symbol (2h at 15m)
 
 CONSECUTIVE_LOSS_REDUCE = 3     # Reduce size after N consecutive losses
-CONSECUTIVE_LOSS_DEFENSIVE = 5  # Enter defensive mode after N losses
-CONSECUTIVE_LOSS_HALT = 8       # Halt trading after N losses
+CONSECUTIVE_LOSS_DEFENSIVE = 7  # Enter defensive mode after N losses
+CONSECUTIVE_LOSS_HALT = 10      # Halt trading after N losses
 CONSECUTIVE_WIN_RESTORE = 2     # Restore full size after N wins
