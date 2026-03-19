@@ -127,7 +127,8 @@ class VirtualExchange:
             if size_usd <= 0:
                 return None
 
-        # Charge taker fee (market order)
+        # Lock margin and charge taker fee (market order)
+        self.balance -= margin
         fee = size_usd * self.config.TAKER_FEE
         self.balance -= fee
         self.total_fees_paid += fee
