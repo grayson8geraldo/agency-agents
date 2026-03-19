@@ -18,18 +18,18 @@ TRADING_PAIRS = [
 ]
 
 # ─── Leverage & Position Sizing ───────────────────────────────────
-DEFAULT_LEVERAGE = 15
-MAX_LEVERAGE = 25
-MIN_LEVERAGE = 3
-MAX_RISK_PER_TRADE = 0.18      # 18% of equity — very aggressive for $100/mo target
-MAX_CONCURRENT_POSITIONS = 6
-MAX_POSITION_SIZE_USD = 2000.0   # Higher cap to allow compounding as equity grows
+DEFAULT_LEVERAGE = 5
+MAX_LEVERAGE = 10
+MIN_LEVERAGE = 2
+MAX_RISK_PER_TRADE = 0.05      # 5% of equity — safe for $200 account
+MAX_CONCURRENT_POSITIONS = 3
+MAX_POSITION_SIZE_USD = 500.0    # Conservative cap for small account
 
 # ─── Risk Management ─────────────────────────────────────────────
-DAILY_LOSS_LIMIT = 0.20         # 20% of day-start equity — wider for aggressive mode
-WEEKLY_LOSS_LIMIT = 0.25        # 25% of week-start equity
-MAX_DRAWDOWN = 0.40             # 40% from peak
-KILL_SWITCH_DRAWDOWN = 0.50     # 50% from peak — halt all trading
+DAILY_LOSS_LIMIT = 0.08         # 8% of day-start equity
+WEEKLY_LOSS_LIMIT = 0.15        # 15% of week-start equity
+MAX_DRAWDOWN = 0.20             # 20% from peak
+KILL_SWITCH_DRAWDOWN = 0.25     # 25% from peak — halt all trading
 MARGIN_RATIO_MIN = 1.5          # 150% margin ratio minimum
 
 # ─── Strategy Parameters ─────────────────────────────────────────
@@ -77,7 +77,7 @@ VOL_HIGH = 75                   # 50th–75th
 # ─── Fees (Bybit Futures) ────────────────────────────────────────
 MAKER_FEE = 0.0001              # 0.01%
 TAKER_FEE = 0.0006              # 0.06%
-SLIPPAGE = 0.0005               # 0.05% estimated slippage
+SLIPPAGE = 0.0015               # 0.15% realistic slippage for small account
 
 # ─── Data Settings ────────────────────────────────────────────────
 CANDLE_TIMEFRAME = "15m"        # Primary timeframe
@@ -90,14 +90,14 @@ LOG_FILE = "trading_bot.log"
 TRADE_LOG_FILE = "trades.json"
 
 # ─── Kelly Criterion ─────────────────────────────────────────────
-KELLY_FRACTION = 0.85           # 85% Kelly — very aggressive for small account
-MIN_TRADES_FOR_KELLY = 10       # Minimum trades before using Kelly sizing
-DEFAULT_WIN_RATE = 0.58         # Assumed win rate before enough data
-DEFAULT_WIN_LOSS_RATIO = 2.0    # Assumed avg_win/avg_loss
+KELLY_FRACTION = 0.25           # Quarter-Kelly — conservative for small account
+MIN_TRADES_FOR_KELLY = 20       # Minimum trades before using Kelly sizing
+DEFAULT_WIN_RATE = 0.52         # Conservative assumed win rate before enough data
+DEFAULT_WIN_LOSS_RATIO = 1.8    # Conservative assumed avg_win/avg_loss
 MIN_POSITION_SIZE_PCT = 0.01    # 1% of equity minimum ($2 on $200 account)
 
 # ─── Defensive Mode Triggers ─────────────────────────────────────
-SIGNAL_COOLDOWN_BARS = 1        # Minimum bars between signals per symbol (15m)
+SIGNAL_COOLDOWN_BARS = 8        # Minimum bars between signals per symbol (2 hours at 15m)
 
 CONSECUTIVE_LOSS_REDUCE = 3     # Reduce size after N consecutive losses
 CONSECUTIVE_LOSS_DEFENSIVE = 7  # Enter defensive mode after N losses

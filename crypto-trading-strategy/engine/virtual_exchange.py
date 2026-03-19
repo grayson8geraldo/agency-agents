@@ -33,10 +33,9 @@ class Position:
     margin: float             # Collateral locked
     stop_loss: float
     take_profit: float
-    trailing_stop: float | None = None
-    trailing_activated: bool = False
     partial_tp_taken: bool = False
     open_time: str = ""
+    open_bar: int = 0              # Bar index at open (for backtester time stop)
     unrealized_pnl: float = 0.0
     funding_paid: float = 0.0
 
@@ -91,7 +90,7 @@ class VirtualExchange:
 
     @property
     def free_margin(self) -> float:
-        return self.balance - self.used_margin
+        return self.equity - self.used_margin
 
     @property
     def margin_ratio(self) -> float:
@@ -127,6 +126,11 @@ class VirtualExchange:
             if size_usd <= 0:
                 return None
 
+        # Check margin ratio after opening: (equity) / (used_margin + new_margin) >= min ratio
+        new_used = self.used_margin + margin
+        if new_used > 0 and self.equity / new_used < self.config.MARGIN_RATIO_MIN:
+            return None
+
         # Lock margin and charge maker fee (limit order at current price)
         self.balance -= margin
         fee = size_usd * self.config.MAKER_FEE
@@ -149,12 +153,16 @@ class VirtualExchange:
         self.positions[position.id] = position
         return position
 
-    def update_positions(self, prices: dict[str, float], funding_rates: dict[str, float] = None):
+    def update_positions(self, prices: dict[str, float], funding_rates: dict[str, float] = None, current_bar: int = 0):
         """
         Update all positions with current prices.
-        Check for SL/TP/liquidation/trailing stop hits.
+        Check for SL/TP/liquidation/time stop hits.
         """
         to_close = []
+        to_partial = []
+
+        # Time stop: bars per hour at 15m candles = 4
+        time_stop_bars = int(getattr(self.config, 'TIME_STOP_HOURS', 4) * 4)
 
         for pid, pos in self.positions.items():
             price = prices.get(pos.symbol)
@@ -180,6 +188,18 @@ class VirtualExchange:
                 to_close.append((pid, pos.stop_loss, "STOP_LOSS"))
                 continue
 
+            # Partial take-profit at 1:1 RR
+            if not pos.partial_tp_taken:
+                sl_dist = abs(pos.entry_price - pos.stop_loss)
+                if pos.side == PositionSide.LONG:
+                    partial_tp_price = pos.entry_price + sl_dist
+                    if price >= partial_tp_price:
+                        to_partial.append((pid, partial_tp_price))
+                else:
+                    partial_tp_price = pos.entry_price - sl_dist
+                    if price <= partial_tp_price:
+                        to_partial.append((pid, partial_tp_price))
+
             # Check take profit
             if pos.side == PositionSide.LONG and price >= pos.take_profit:
                 to_close.append((pid, pos.take_profit, "TAKE_PROFIT"))
@@ -188,23 +208,15 @@ class VirtualExchange:
                 to_close.append((pid, pos.take_profit, "TAKE_PROFIT"))
                 continue
 
-            # Trailing stop logic
-            if pos.trailing_stop is not None:
-                if pos.side == PositionSide.LONG:
-                    # Move trailing stop up
-                    new_trail = price - pos.trailing_stop
-                    if not pos.trailing_activated:
-                        rr_achieved = (price - pos.entry_price) / abs(pos.entry_price - pos.stop_loss)
-                        if rr_achieved >= self.config.TRAILING_ACTIVATION_RR:
-                            pos.trailing_activated = True
-                    if pos.trailing_activated and price <= (pos.entry_price + pos.trailing_stop):
-                        # This is simplified — in reality we'd track the peak
-                        pass
-                elif pos.side == PositionSide.SHORT:
-                    if not pos.trailing_activated:
-                        rr_achieved = (pos.entry_price - price) / abs(pos.stop_loss - pos.entry_price)
-                        if rr_achieved >= self.config.TRAILING_ACTIVATION_RR:
-                            pos.trailing_activated = True
+            # Time stop: close if position stagnant for too long
+            if current_bar > 0 and pos.open_bar > 0:
+                bars_held = current_bar - pos.open_bar
+                if bars_held >= time_stop_bars:
+                    # Only close if position is near breakeven (not trending)
+                    pnl_pct = abs(pos.unrealized_pnl) / pos.margin if pos.margin > 0 else 0
+                    if pnl_pct < 0.05:  # Less than 5% move on margin
+                        to_close.append((pid, price, "TIME_STOP"))
+                        continue
 
             # Apply funding rate (every 8 hours in real exchange, simplified here)
             if funding_rates and pos.symbol in funding_rates:
@@ -221,6 +233,31 @@ class VirtualExchange:
                     self.balance += funding_cost
                     pos.funding_paid -= funding_cost
                     self.total_funding_paid -= funding_cost
+
+        # Execute partial take-profits (close 50% of position)
+        partial_ratio = getattr(self.config, 'PARTIAL_TP_RATIO', 0.5)
+        for pid, partial_price in to_partial:
+            pos = self.positions.get(pid)
+            if pos is None or pos.partial_tp_taken:
+                continue
+            close_amount = pos.size_usd * partial_ratio
+            # Realize partial PnL
+            if pos.side == PositionSide.LONG:
+                partial_pnl = (partial_price - pos.entry_price) / pos.entry_price * close_amount
+            else:
+                partial_pnl = (pos.entry_price - partial_price) / pos.entry_price * close_amount
+            fee = close_amount * self.config.MAKER_FEE
+            self.total_fees_paid += fee
+            net_partial = partial_pnl - fee
+            # Return partial margin + profit
+            partial_margin = pos.margin * partial_ratio
+            self.balance += partial_margin + net_partial
+            # Reduce position
+            pos.size_usd -= close_amount
+            pos.margin -= partial_margin
+            pos.partial_tp_taken = True
+            # Move stop-loss to breakeven after partial TP
+            pos.stop_loss = pos.entry_price
 
         # Close positions that hit exit conditions
         for pid, exit_price, reason in to_close:

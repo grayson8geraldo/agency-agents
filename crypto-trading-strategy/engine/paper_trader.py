@@ -32,6 +32,8 @@ class PaperTrader:
         self.ccxt_exchange = get_exchange()
         self.iteration = 0
         self.start_time = datetime.now(timezone.utc)
+        self._last_day = self.start_time.date()
+        self._last_week = self.start_time.isocalendar()[1]
 
     def run(self, duration_minutes: int = 60, interval_seconds: int = 60):
         """
@@ -81,6 +83,16 @@ class PaperTrader:
 
     def _tick(self):
         """Single iteration: fetch data, check signals, manage positions."""
+        # Daily/weekly risk reset
+        now = datetime.now(timezone.utc)
+        if now.date() != self._last_day:
+            self.risk_mgr.new_day()
+            self._last_day = now.date()
+        current_week = now.isocalendar()[1]
+        if current_week != self._last_week:
+            self.risk_mgr.new_week()
+            self._last_week = current_week
+
         # Fetch current prices
         current_prices = {}
         for symbol in self.config.TRADING_PAIRS:

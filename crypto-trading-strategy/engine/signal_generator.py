@@ -235,8 +235,8 @@ class SignalGenerator:
         extra = max(0, len(reason_parts) - 2)
         confidence = min(1.0, 0.5 + extra * 0.1)
 
-        # Leverage from vol regime — balanced for small account growth
-        leverage_map = {"LOW": 15, "MEDIUM": 10, "HIGH": 7, "EXTREME": 3}
+        # Leverage from vol regime — conservative for capital preservation
+        leverage_map = {"LOW": 5, "MEDIUM": 4, "HIGH": 3, "EXTREME": 2}
         leverage = leverage_map.get(vol_regime, 10)
 
         return TradingSignal(

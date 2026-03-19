@@ -121,14 +121,14 @@ class RiskManager:
 
     def get_max_risk_per_trade(self) -> float:
         """Get max risk per trade based on mode, using config values."""
-        base_risk = self.config.MAX_RISK_PER_TRADE  # 0.08
+        base_risk = self.config.MAX_RISK_PER_TRADE
         mode = self.state.mode
         if mode == RiskMode.AGGRESSIVE:
-            return base_risk * 1.5   # 12%
+            return base_risk * 1.5
         elif mode == RiskMode.NORMAL:
-            return base_risk         # 8%
+            return base_risk
         elif mode == RiskMode.DEFENSIVE:
-            return base_risk * 0.5   # 4%
+            return base_risk * 0.5
         return 0.0
 
     def calculate_position_size(self, confidence: float = 1.0) -> float:
@@ -183,10 +183,10 @@ class RiskManager:
         max_lev = self.get_max_leverage()
 
         regime_leverage = {
-            "LOW": min(max_lev, 20),
-            "MEDIUM": min(max_lev, 15),
-            "HIGH": min(max_lev, 10),
-            "EXTREME": min(max_lev, 5),
+            "LOW": min(max_lev, 5),
+            "MEDIUM": min(max_lev, 4),
+            "HIGH": min(max_lev, 3),
+            "EXTREME": min(max_lev, 2),
         }
         lev = regime_leverage.get(volatility_regime, self.config.DEFAULT_LEVERAGE)
         return max(self.config.MIN_LEVERAGE, min(lev, max_lev))
@@ -268,13 +268,9 @@ class RiskManager:
         self.update_mode()
 
     def new_day(self):
-        """Reset daily counters and allow recovery from consecutive loss halt."""
+        """Reset daily counters. Consecutive losses only reset after wins, not by time."""
         self.state.day_start_equity = self.state.equity
         self.state.daily_pnl = 0.0
-        # Allow recovery: reset consecutive losses on new day so strategy can resume
-        if self.state.consecutive_losses >= self.config.CONSECUTIVE_LOSS_HALT:
-            self.state.consecutive_losses = 0
-            self.update_mode()
 
     def new_week(self):
         """Reset weekly counters."""

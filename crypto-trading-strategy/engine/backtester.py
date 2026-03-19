@@ -86,7 +86,7 @@ class Backtester:
                     funding_rates[symbol] = 0.0001  # Approximate 0.01% per 8h
 
             # Update existing positions
-            self.exchange.update_positions(current_prices, funding_rates)
+            self.exchange.update_positions(current_prices, funding_rates, current_bar=i)
 
             # Sync risk manager equity with exchange
             self.risk_mgr.state.equity = self.exchange.equity
@@ -126,12 +126,26 @@ class Backtester:
                 if has_position:
                     continue
 
-                # Use a lookback window for signal evaluation
-                window = df.iloc[max(0, i - 200):i + 1].copy()
+                # Use a lookback window for signal evaluation (exclude current bar to avoid look-ahead)
+                window = df.iloc[max(0, i - 200):i].copy()
                 signal = self.signal_gen.evaluate_current(window, symbol, global_idx=i)
 
                 if signal is None:
                     continue
+
+                # Override entry price with current bar's open (realistic fill)
+                signal.entry_price = df.iloc[i]["open"]
+                # Recalculate SL/TP from the realistic entry price
+                atr = window.iloc[-1]["atr"] if "atr" in window.columns else 0
+                if atr > 0:
+                    vol_sl_scale = {"LOW": 1.0, "MEDIUM": 1.2, "HIGH": 1.5, "EXTREME": 2.0}
+                    sl_mult = self.config.ATR_SL_MULTIPLIER * vol_sl_scale.get(signal.volatility_regime, 1.2)
+                    if signal.signal_type == SignalType.LONG:
+                        signal.stop_loss = signal.entry_price - atr * sl_mult
+                        signal.take_profit = signal.entry_price + atr * sl_mult * self.config.REWARD_RISK_RATIO
+                    else:
+                        signal.stop_loss = signal.entry_price + atr * sl_mult
+                        signal.take_profit = signal.entry_price - atr * sl_mult * self.config.REWARD_RISK_RATIO
 
                 self.signals_generated += 1
 
@@ -172,6 +186,7 @@ class Backtester:
                 )
 
                 if pos is not None:
+                    pos.open_bar = i
                     self.signals_taken += 1
                     if verbose and self.signals_taken <= 50:  # Limit output
                         print(
