@@ -18,15 +18,15 @@ TRADING_PAIRS = [
 ]
 
 # ─── Leverage & Position Sizing ───────────────────────────────────
-DEFAULT_LEVERAGE = 12
-MAX_LEVERAGE = 20
+DEFAULT_LEVERAGE = 15
+MAX_LEVERAGE = 25
 MIN_LEVERAGE = 3
-MAX_RISK_PER_TRADE = 0.12      # 12% of equity — aggressive for small account growth
+MAX_RISK_PER_TRADE = 0.18      # 18% of equity — very aggressive for $100/mo target
 MAX_CONCURRENT_POSITIONS = 6
 MAX_POSITION_SIZE_USD = 2000.0   # Higher cap to allow compounding as equity grows
 
 # ─── Risk Management ─────────────────────────────────────────────
-DAILY_LOSS_LIMIT = 0.15         # 15% of day-start equity
+DAILY_LOSS_LIMIT = 0.20         # 20% of day-start equity — wider for aggressive mode
 WEEKLY_LOSS_LIMIT = 0.25        # 25% of week-start equity
 MAX_DRAWDOWN = 0.40             # 40% from peak
 KILL_SWITCH_DRAWDOWN = 0.50     # 50% from peak — halt all trading
@@ -90,14 +90,14 @@ LOG_FILE = "trading_bot.log"
 TRADE_LOG_FILE = "trades.json"
 
 # ─── Kelly Criterion ─────────────────────────────────────────────
-KELLY_FRACTION = 0.75           # 75% Kelly — aggressive for small account
+KELLY_FRACTION = 0.85           # 85% Kelly — very aggressive for small account
 MIN_TRADES_FOR_KELLY = 10       # Minimum trades before using Kelly sizing
 DEFAULT_WIN_RATE = 0.58         # Assumed win rate before enough data
 DEFAULT_WIN_LOSS_RATIO = 2.0    # Assumed avg_win/avg_loss
 MIN_POSITION_SIZE_PCT = 0.01    # 1% of equity minimum ($2 on $200 account)
 
 # ─── Defensive Mode Triggers ─────────────────────────────────────
-SIGNAL_COOLDOWN_BARS = 2        # Minimum bars between signals per symbol (30m at 15m)
+SIGNAL_COOLDOWN_BARS = 1        # Minimum bars between signals per symbol (15m)
 
 CONSECUTIVE_LOSS_REDUCE = 3     # Reduce size after N consecutive losses
 CONSECUTIVE_LOSS_DEFENSIVE = 7  # Enter defensive mode after N losses
