@@ -161,11 +161,11 @@ class RiskManager:
                 kelly_cap = self.state.equity * kelly * leverage
                 size = min(size, kelly_cap)
 
-        # Reduce for consecutive losses
+        # Reduce for consecutive losses (softened for multi-pair trading)
         if self.state.consecutive_losses >= self.config.CONSECUTIVE_LOSS_DEFENSIVE:
-            size *= 0.5
+            size *= 0.7
         elif self.state.consecutive_losses >= self.config.CONSECUTIVE_LOSS_REDUCE:
-            size *= 0.75
+            size *= 0.85
 
         # Never more than equity × max leverage
         size = min(size, self.state.equity * leverage)

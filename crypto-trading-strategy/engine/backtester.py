@@ -134,6 +134,12 @@ class Backtester:
                     continue
 
                 self.signals_generated += 1
+
+                # Filter out low-confidence signals
+                min_conf = getattr(self.config, 'MIN_CONFIDENCE', 0.5)
+                if signal.confidence < min_conf:
+                    continue
+
                 candidates.append((symbol, signal))
 
             # Sort by confidence descending — best signals first
