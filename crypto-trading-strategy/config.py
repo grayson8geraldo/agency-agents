@@ -9,7 +9,7 @@ TARGET_BALANCE = 1200.0         # Target in 14 days
 TRADING_DAYS = 14               # Strategy horizon
 
 # ─── Exchange Settings ────────────────────────────────────────────
-EXCHANGE = "binance"
+EXCHANGE = "bybit"
 USE_TESTNET = True              # Use virtual/paper trading
 TRADING_PAIRS = [
     "BTC/USDT",
@@ -72,9 +72,9 @@ VOL_MEDIUM = 50                 # 25th–50th
 VOL_HIGH = 75                   # 50th–75th
 # Above 75th = Extreme
 
-# ─── Fees (Binance Futures) ──────────────────────────────────────
-MAKER_FEE = 0.0002              # 0.02%
-TAKER_FEE = 0.0005              # 0.05%
+# ─── Fees (Bybit Futures) ────────────────────────────────────────
+MAKER_FEE = 0.0001              # 0.01%
+TAKER_FEE = 0.0006              # 0.06%
 SLIPPAGE = 0.0005               # 0.05% estimated slippage
 
 # ─── Data Settings ────────────────────────────────────────────────

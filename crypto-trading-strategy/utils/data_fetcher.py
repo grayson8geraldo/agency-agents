@@ -11,8 +11,8 @@ import pandas as pd
 
 
 def get_exchange():
-    """Create a Binance exchange instance (public data only)."""
-    exchange = ccxt.binance({
+    """Create a Bybit exchange instance (public data only)."""
+    exchange = ccxt.bybit({
         "enableRateLimit": True,
         "options": {"defaultType": "future"},
     })
