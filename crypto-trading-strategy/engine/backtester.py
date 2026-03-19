@@ -112,11 +112,12 @@ class Backtester:
             if not can_trade:
                 continue
 
-            # Skip if max positions reached
-            if len(self.exchange.positions) >= self.config.MAX_CONCURRENT_POSITIONS:
+            # Collect all candidate signals, then rank by confidence
+            available_slots = self.config.MAX_CONCURRENT_POSITIONS - len(self.exchange.positions)
+            if available_slots <= 0:
                 continue
 
-            # Generate signals for each pair
+            candidates = []
             for symbol, df in prepared.items():
                 # Check if already have position in this symbol
                 has_position = any(
@@ -133,7 +134,12 @@ class Backtester:
                     continue
 
                 self.signals_generated += 1
+                candidates.append((symbol, signal))
 
+            # Sort by confidence descending — best signals first
+            candidates.sort(key=lambda x: x[1].confidence, reverse=True)
+
+            for symbol, signal in candidates[:available_slots]:
                 # Risk manager validates
                 can_trade, reason = self.risk_mgr.can_trade()
                 if not can_trade:
