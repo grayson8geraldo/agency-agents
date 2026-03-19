@@ -96,8 +96,8 @@ DEFAULT_WIN_LOSS_RATIO = 2.0    # Assumed avg_win/avg_loss
 MIN_POSITION_SIZE_PCT = 0.0     # No forced minimum — let Kelly decide
 
 # ─── Defensive Mode Triggers ─────────────────────────────────────
-SIGNAL_COOLDOWN_BARS = 8        # Minimum bars between signals per symbol (2h at 15m)
-MIN_CONFIDENCE = 0.70           # Skip signals below this confidence
+SIGNAL_COOLDOWN_BARS = 4        # Minimum bars between signals per symbol (1h at 15m)
+MIN_CONFIDENCE = 0.60           # Skip signals below 60% (need 3+ confirmations)
 
 CONSECUTIVE_LOSS_REDUCE = 2     # Reduce size after N consecutive losses
 CONSECUTIVE_LOSS_DEFENSIVE = 3  # Enter defensive mode after N losses

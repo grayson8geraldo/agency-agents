@@ -85,7 +85,7 @@ class SignalGenerator:
         """Evaluate a single bar for entry signals."""
         # Skip if any indicator is NaN
         required = ["ema_fast", "ema_slow", "ema_200", "rsi", "macd_hist", "atr",
-                     "atr_percentile", "volume_ratio", "bb_upper", "bb_lower"]
+                     "atr_percentile", "volume_ratio", "bb_upper", "bb_middle", "bb_lower"]
         for col in required:
             if pd.isna(row.get(col)):
                 return None
@@ -127,7 +127,7 @@ class SignalGenerator:
         conditions = []
         score = 0
 
-        # Trend filter: price must be above EMA 200 for longs
+        # Hard filter: price must be above EMA 200 (trend alignment)
         if row["close"] < row["ema_200"]:
             return None
 
@@ -135,12 +135,11 @@ class SignalGenerator:
         if row["ema_fast"] > row["ema_slow"]:
             conditions.append("EMA_BULL")
             score += 1
-            # Fresh crossover gets bonus
             if prev["ema_fast"] <= prev["ema_slow"]:
                 conditions.append("EMA_CROSS_UP")
                 score += 1
 
-        # RSI confirmation
+        # RSI confirmation — bullish momentum but not overbought
         if row["rsi"] > self.config.RSI_LONG_THRESHOLD and row["rsi"] < self.config.RSI_OVERBOUGHT:
             conditions.append(f"RSI={row['rsi']:.0f}")
             score += 1
@@ -158,14 +157,14 @@ class SignalGenerator:
             conditions.append(f"VOL={row['volume_ratio']:.1f}x")
             score += 1
 
-        # Bollinger Band confirmation: price near lower band = good long entry
-        bb_range = row["bb_upper"] - row["bb_lower"]
-        if bb_range > 0 and (row["close"] - row["bb_lower"]) / bb_range < 0.35:
-            conditions.append("BB_LOW")
+        # BB momentum: price above middle band confirms uptrend
+        bb_mid = row.get("bb_middle")
+        if bb_mid is not None and not pd.isna(bb_mid) and row["close"] > bb_mid:
+            conditions.append("BB_MID+")
             score += 1
 
-        # Need at least 3 confirmations for a signal
-        if score >= 3:
+        # Need at least 2 confirmations (EMA200 is the quality gate)
+        if score >= 2:
             return " | ".join(conditions)
         return None
 
@@ -174,7 +173,7 @@ class SignalGenerator:
         conditions = []
         score = 0
 
-        # Trend filter: price must be below EMA 200 for shorts
+        # Hard filter: price must be below EMA 200 (trend alignment)
         if row["close"] > row["ema_200"]:
             return None
 
@@ -200,13 +199,13 @@ class SignalGenerator:
             conditions.append(f"VOL={row['volume_ratio']:.1f}x")
             score += 1
 
-        # Bollinger Band confirmation: price near upper band = good short entry
-        bb_range = row["bb_upper"] - row["bb_lower"]
-        if bb_range > 0 and (row["bb_upper"] - row["close"]) / bb_range < 0.35:
-            conditions.append("BB_HIGH")
+        # BB momentum: price below middle band confirms downtrend
+        bb_mid = row.get("bb_middle")
+        if bb_mid is not None and not pd.isna(bb_mid) and row["close"] < bb_mid:
+            conditions.append("BB_MID-")
             score += 1
 
-        if score >= 3:
+        if score >= 2:
             return " | ".join(conditions)
         return None
 
@@ -233,11 +232,10 @@ class SignalGenerator:
             sl = entry + atr * sl_mult
             tp = entry - atr * sl_mult * self.config.REWARD_RISK_RATIO
 
-        # Confidence based on how many extra confirmations (3 is new minimum)
-        base_conf = 0.6
+        # Confidence: base 0.5 at 2 confirmations, +0.1 per extra
         reason_parts = reason.split(" | ")
-        extra = len(reason_parts) - 3
-        confidence = min(1.0, base_conf + extra * 0.1)
+        extra = max(0, len(reason_parts) - 2)
+        confidence = min(1.0, 0.5 + extra * 0.1)
 
         # Leverage from vol regime — more conservative
         leverage_map = {"LOW": 10, "MEDIUM": 7, "HIGH": 5, "EXTREME": 3}
