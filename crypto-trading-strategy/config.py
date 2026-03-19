@@ -23,6 +23,7 @@ MAX_LEVERAGE = 20
 MIN_LEVERAGE = 3
 MAX_RISK_PER_TRADE = 0.05      # 5% of equity
 MAX_CONCURRENT_POSITIONS = 3
+MAX_POSITION_SIZE_USD = 500.0    # Absolute cap per trade to prevent runaway compounding
 
 # ─── Risk Management ─────────────────────────────────────────────
 DAILY_LOSS_LIMIT = 0.15         # 15% of day-start equity

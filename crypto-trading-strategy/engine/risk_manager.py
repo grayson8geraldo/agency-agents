@@ -167,6 +167,10 @@ class RiskManager:
         max_absolute = self.state.equity * max_risk * leverage
         size = min(size, max_absolute)
 
+        # Absolute USD cap to prevent runaway compounding
+        max_pos = getattr(self.config, 'MAX_POSITION_SIZE_USD', float('inf'))
+        size = min(size, max_pos)
+
         return max(0.0, size)
 
     def calculate_leverage(self, volatility_regime: str) -> int:
