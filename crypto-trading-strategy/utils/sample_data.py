@@ -37,7 +37,13 @@ def generate_ohlcv(
         "BTC/USDT": {"price": 84000, "vol": 0.003},
         "ETH/USDT": {"price": 1900, "vol": 0.004},
         "SOL/USDT": {"price": 130, "vol": 0.006},
+        "XRP/USDT": {"price": 0.55, "vol": 0.006},
         "DOGE/USDT": {"price": 0.17, "vol": 0.008},
+        "ADA/USDT": {"price": 0.45, "vol": 0.006},
+        "AVAX/USDT": {"price": 35.0, "vol": 0.007},
+        "LINK/USDT": {"price": 14.0, "vol": 0.006},
+        "MATIC/USDT": {"price": 0.85, "vol": 0.007},
+        "DOT/USDT": {"price": 7.5, "vol": 0.006},
     }
 
     sym_defaults = defaults.get(symbol, {"price": 100, "vol": 0.005})

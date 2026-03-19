@@ -15,6 +15,13 @@ TRADING_PAIRS = [
     "BTC/USDT",
     "ETH/USDT",
     "SOL/USDT",
+    "XRP/USDT",
+    "DOGE/USDT",
+    "ADA/USDT",
+    "AVAX/USDT",
+    "LINK/USDT",
+    "MATIC/USDT",
+    "DOT/USDT",
 ]
 
 # ─── Leverage & Position Sizing ───────────────────────────────────
@@ -22,7 +29,7 @@ DEFAULT_LEVERAGE = 10
 MAX_LEVERAGE = 20
 MIN_LEVERAGE = 3
 MAX_RISK_PER_TRADE = 0.08      # 8% of equity — aggressive for small account growth
-MAX_CONCURRENT_POSITIONS = 6
+MAX_CONCURRENT_POSITIONS = 15
 MAX_POSITION_SIZE_USD = 2000.0   # Higher cap to allow compounding as equity grows
 
 # ─── Risk Management ─────────────────────────────────────────────
