@@ -22,7 +22,7 @@ DEFAULT_LEVERAGE = 10
 MAX_LEVERAGE = 20
 MIN_LEVERAGE = 3
 MAX_RISK_PER_TRADE = 0.08      # 8% of equity — aggressive for small account growth
-MAX_CONCURRENT_POSITIONS = 3
+MAX_CONCURRENT_POSITIONS = 6
 MAX_POSITION_SIZE_USD = 2000.0   # Higher cap to allow compounding as equity grows
 
 # ─── Risk Management ─────────────────────────────────────────────
@@ -93,12 +93,12 @@ KELLY_FRACTION = 0.65           # 65% Kelly — more aggressive for small accoun
 MIN_TRADES_FOR_KELLY = 10       # Minimum trades before using Kelly sizing
 DEFAULT_WIN_RATE = 0.58         # Assumed win rate before enough data
 DEFAULT_WIN_LOSS_RATIO = 2.0    # Assumed avg_win/avg_loss
-MIN_POSITION_SIZE_PCT = 0.0     # No forced minimum — let Kelly decide
+MIN_POSITION_SIZE_PCT = 0.01    # 1% of equity minimum ($2 on $200 account)
 
 # ─── Defensive Mode Triggers ─────────────────────────────────────
 SIGNAL_COOLDOWN_BARS = 4        # Minimum bars between signals per symbol (1h at 15m)
 
-CONSECUTIVE_LOSS_REDUCE = 2     # Reduce size after N consecutive losses
-CONSECUTIVE_LOSS_DEFENSIVE = 3  # Enter defensive mode after N losses
-CONSECUTIVE_LOSS_HALT = 5       # Halt trading after N losses
+CONSECUTIVE_LOSS_REDUCE = 3     # Reduce size after N consecutive losses
+CONSECUTIVE_LOSS_DEFENSIVE = 5  # Enter defensive mode after N losses
+CONSECUTIVE_LOSS_HALT = 8       # Halt trading after N losses
 CONSECUTIVE_WIN_RESTORE = 2     # Restore full size after N wins

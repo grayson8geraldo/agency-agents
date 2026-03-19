@@ -120,35 +120,39 @@ class RiskManager:
             return 0
 
     def get_max_risk_per_trade(self) -> float:
-        """Get max risk per trade based on mode."""
+        """Get max risk per trade based on mode, using config values."""
+        base_risk = self.config.MAX_RISK_PER_TRADE  # 0.08
         mode = self.state.mode
         if mode == RiskMode.AGGRESSIVE:
-            return 0.05
+            return base_risk * 1.5   # 12%
         elif mode == RiskMode.NORMAL:
-            return 0.03
+            return base_risk         # 8%
         elif mode == RiskMode.DEFENSIVE:
-            return 0.015
+            return base_risk * 0.5   # 4%
         return 0.0
 
     def calculate_position_size(self, confidence: float = 1.0) -> float:
         """
-        Calculate position size in USD based on Kelly criterion and risk mode.
+        Calculate position size in USD based on risk allocation and Kelly criterion.
+        Uses max_risk as the primary driver; Kelly acts as a secondary cap
+        once we have enough trade history.
         confidence: 0.5 to 1.0 signal quality multiplier
         """
         if self.state.mode == RiskMode.HALTED:
             return 0.0
 
         confidence = max(0.5, min(1.0, confidence))
-        kelly = self.kelly_fraction()
         max_risk = self.get_max_risk_per_trade()
         leverage = self.get_max_leverage()
 
-        # Base size from Kelly
-        size = self.state.equity * kelly * confidence
+        # Primary: risk-based allocation
+        size = self.state.equity * max_risk * leverage * confidence
 
-        # Cap by max risk
-        max_size = self.state.equity * max_risk * leverage
-        size = min(size, max_size)
+        # Secondary cap: Kelly criterion (only after enough trades)
+        kelly = self.kelly_fraction()
+        if self.state.total_trades >= self.config.MIN_TRADES_FOR_KELLY and kelly > 0:
+            kelly_cap = self.state.equity * kelly * leverage
+            size = min(size, kelly_cap)
 
         # Reduce for consecutive losses
         if self.state.consecutive_losses >= self.config.CONSECUTIVE_LOSS_DEFENSIVE:
@@ -159,15 +163,13 @@ class RiskManager:
         # Never more than equity × max leverage
         size = min(size, self.state.equity * leverage)
 
-        # Cap at max risk × leverage (absolute cap)
-        max_absolute = self.state.equity * max_risk * leverage
-        size = min(size, max_absolute)
-
         # Absolute USD cap to prevent runaway compounding
         max_pos = getattr(self.config, 'MAX_POSITION_SIZE_USD', float('inf'))
         size = min(size, max_pos)
 
-        return max(0.0, size)
+        # Minimum position size for small accounts
+        min_size = self.state.equity * max(self.config.MIN_POSITION_SIZE_PCT, 0.01)
+        return max(min_size, size)
 
     def calculate_leverage(self, volatility_regime: str) -> int:
         """Select leverage based on volatility regime and risk mode."""
