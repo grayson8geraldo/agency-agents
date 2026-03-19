@@ -96,7 +96,7 @@ DEFAULT_WIN_LOSS_RATIO = 2.0    # Assumed avg_win/avg_loss
 MIN_POSITION_SIZE_PCT = 0.01    # 1% of equity minimum ($2 on $200 account)
 
 # ─── Defensive Mode Triggers ─────────────────────────────────────
-SIGNAL_COOLDOWN_BARS = 16       # Minimum bars between signals per symbol (4h at 15m)
+SIGNAL_COOLDOWN_BARS = 32       # Minimum bars between signals per symbol (8h at 15m)
 
 CONSECUTIVE_LOSS_REDUCE = 3     # Reduce size after N consecutive losses
 CONSECUTIVE_LOSS_DEFENSIVE = 7  # Enter defensive mode after N losses
