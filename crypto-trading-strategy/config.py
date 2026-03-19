@@ -22,7 +22,7 @@ DEFAULT_LEVERAGE = 10
 MAX_LEVERAGE = 20
 MIN_LEVERAGE = 3
 MAX_RISK_PER_TRADE = 0.08      # 8% of equity — aggressive for small account growth
-MAX_CONCURRENT_POSITIONS = 3
+MAX_CONCURRENT_POSITIONS = 6
 MAX_POSITION_SIZE_USD = 2000.0   # Higher cap to allow compounding as equity grows
 
 # ─── Risk Management ─────────────────────────────────────────────
@@ -96,7 +96,7 @@ DEFAULT_WIN_LOSS_RATIO = 2.0    # Assumed avg_win/avg_loss
 MIN_POSITION_SIZE_PCT = 0.01    # 1% of equity minimum ($2 on $200 account)
 
 # ─── Defensive Mode Triggers ─────────────────────────────────────
-SIGNAL_COOLDOWN_BARS = 32       # Minimum bars between signals per symbol (8h at 15m)
+SIGNAL_COOLDOWN_BARS = 4        # Minimum bars between signals per symbol (1h at 15m)
 
 CONSECUTIVE_LOSS_REDUCE = 3     # Reduce size after N consecutive losses
 CONSECUTIVE_LOSS_DEFENSIVE = 7  # Enter defensive mode after N losses

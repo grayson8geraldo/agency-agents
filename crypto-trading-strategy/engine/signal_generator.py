@@ -105,10 +105,13 @@ class SignalGenerator:
             return None
 
         long_signal = self._check_long(row, prev)
+        short_signal = self._check_short(row, prev)
 
         signal = None
-        if long_signal:
+        if long_signal and not short_signal:
             signal = self._build_signal(SignalType.LONG, row, symbol, vol_regime, long_signal)
+        elif short_signal and not long_signal:
+            signal = self._build_signal(SignalType.SHORT, row, symbol, vol_regime, short_signal)
 
         if signal is not None:
             if not hasattr(self, '_last_signal_bar'):
@@ -200,7 +203,7 @@ class SignalGenerator:
             conditions.append("BB_MID-")
             score += 1
 
-        if score >= 3:
+        if score >= 2:
             return " | ".join(conditions)
         return None
 
