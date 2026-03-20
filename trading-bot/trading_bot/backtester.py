@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, time, timedelta
+from datetime import date as date_type, datetime, time, timedelta
 from decimal import Decimal
 from typing import Optional
 
@@ -16,6 +16,18 @@ from .strategy import generate_signal
 from .virtual_account import VirtualAccount
 
 logger = logging.getLogger(__name__)
+
+
+def _ny_trading_dates(start: date_type, end: date_type) -> list[date_type]:
+    """Generate list of NY trading dates (skip Sat/Sun)."""
+    dates = []
+    current = start
+    while current <= end:
+        weekday = current.weekday()
+        if weekday < 5:  # Mon-Fri
+            dates.append(current)
+        current += timedelta(days=1)
+    return dates
 
 
 class Backtester:
@@ -44,77 +56,92 @@ class Backtester:
         pip_size = get_pip_size(symbol)
         account = VirtualAccount(self.config.risk.initial_balance, symbol)
 
+        # Convert to NY dates for iteration
+        start_ny = start_date.astimezone(NY_TZ).date() if start_date.tzinfo else start_date.date()
+        end_ny = end_date.astimezone(NY_TZ).date() if end_date.tzinfo else end_date.date()
+
         print(f"\n{'='*60}")
         print(f"  BACKTESTING: ORB + Session Analysis (Forex)")
         print(f"  Pair:     {pair_name}")
-        print(f"  Period:   {start_date.date()} -> {end_date.date()}")
+        print(f"  Period:   {start_ny} -> {end_ny}")
         print(f"  Balance:  ${account.state.initial_balance}")
         print(f"  Pip size: {pip_size}")
         print(f"{'='*60}\n")
 
         # Download all historical data
+        # We need data from previous day 19:00 NY for Asia session,
+        # so fetch from 2 days before start
+        fetch_start = datetime.combine(
+            start_ny - timedelta(days=2), time(0, 0), tzinfo=NY_TZ,
+        ).astimezone(UTC_TZ)
+        fetch_end = datetime.combine(
+            end_ny + timedelta(days=1), time(23, 59), tzinfo=NY_TZ,
+        ).astimezone(UTC_TZ)
+
         print("Downloading historical forex data...")
         candles_15m = self.fetcher.fetch_candles_range(
-            symbol, "15m",
-            start_date - timedelta(days=2),
-            end_date + timedelta(days=1),
+            symbol, "15m", fetch_start, fetch_end,
         )
         candles_5m = self.fetcher.fetch_candles_range(
-            symbol, "5m",
-            start_date - timedelta(days=2),
-            end_date + timedelta(days=1),
+            symbol, "5m", fetch_start, fetch_end,
         )
 
         if not candles_15m or not candles_5m:
             print("ERROR: Could not fetch historical data.")
-            print("Note: yfinance limits 5m data to ~60 days back.")
+            print("Note: yfinance limits 5m/15m data to ~60 days back from today.")
             return account
 
-        print(f"  15m candles: {len(candles_15m)}")
-        print(f"  5m candles:  {len(candles_5m)}")
+        # Show actual data coverage
+        first_15m = candles_15m[0].timestamp.astimezone(NY_TZ)
+        last_15m = candles_15m[-1].timestamp.astimezone(NY_TZ)
+        first_5m = candles_5m[0].timestamp.astimezone(NY_TZ)
+        last_5m = candles_5m[-1].timestamp.astimezone(NY_TZ)
+
+        print(f"  15m candles: {len(candles_15m)}  "
+              f"({first_15m.date()} {first_15m.strftime('%H:%M')} → "
+              f"{last_15m.date()} {last_15m.strftime('%H:%M')} NY)")
+        print(f"  5m candles:  {len(candles_5m)}  "
+              f"({first_5m.date()} {first_5m.strftime('%H:%M')} → "
+              f"{last_5m.date()} {last_5m.strftime('%H:%M')} NY)")
         print()
 
-        # Iterate day by day
-        current_date = start_date
+        # Generate NY trading dates
+        trading_dates = _ny_trading_dates(start_ny, end_ny)
         days_processed = 0
-        days_skipped = 0
+        days_with_data = 0
         signals_found = 0
 
-        while current_date < end_date:
-            # Skip weekends
-            if not is_forex_trading_day(current_date):
-                current_date += timedelta(days=1)
-                days_skipped += 1
-                continue
-
-            ny_date = current_date.astimezone(NY_TZ)
-            date_str = ny_date.strftime("%Y-%m-%d")
+        for ny_date in trading_dates:
+            date_str = ny_date.isoformat()
             account.reset_daily(date_str)
 
             # Kill switch check
             if account.state.kill_switch_active:
-                current_date += timedelta(days=1)
                 continue
 
-            # Get candles for this day
-            day_15m = self._get_day_candles(candles_15m, current_date)
-            day_5m = self._get_day_candles(candles_5m, current_date)
+            # Build a NY-based datetime for this trading day (10:00 NY as reference)
+            trade_date_ny = datetime.combine(ny_date, time(10, 0), tzinfo=NY_TZ)
+
+            # Get candles for this day's full session
+            day_15m = self._get_day_candles(candles_15m, ny_date)
+            day_5m = self._get_day_candles(candles_5m, ny_date)
 
             if not day_15m or not day_5m:
-                current_date += timedelta(days=1)
                 continue
 
+            days_with_data += 1
+
             # Run strategy
-            result = self._process_day(account, day_15m, day_5m, current_date)
+            result = self._process_day(account, day_15m, day_5m, trade_date_ny)
             if result:
                 signals_found += 1
 
             days_processed += 1
-            current_date += timedelta(days=1)
 
         # Print results
-        print(f"\nDays processed: {days_processed}")
-        print(f"Days skipped (weekends): {days_skipped}")
+        print(f"\nTrading days in range: {len(trading_dates)}")
+        print(f"Days with data: {days_with_data}")
+        print(f"Days processed: {days_processed}")
         print(f"Signals/trades: {signals_found}")
         print(account.get_summary())
         self._print_trade_log(account, pip_size)
@@ -124,10 +151,14 @@ class Backtester:
     def _get_day_candles(
         self,
         all_candles: list[Candle],
-        trade_date: datetime,
+        ny_date: date_type,
     ) -> list[Candle]:
-        """Get candles relevant for a trading day (prev 19:00 NY → 17:00 NY)."""
-        ny_date = trade_date.astimezone(NY_TZ).date()
+        """
+        Get candles relevant for a trading day.
+
+        A forex trading day in NY runs from previous day 19:00 NY
+        to current day 17:00 NY (covers Asia, London, NY sessions).
+        """
         prev_day = ny_date - timedelta(days=1)
 
         start_ny = datetime.combine(prev_day, time(19, 0), tzinfo=NY_TZ)

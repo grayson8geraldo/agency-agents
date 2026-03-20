@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Optional
 
-import pandas as pd
 import yfinance as yf
 
 from .config import UTC_TZ, get_pair_name
@@ -25,9 +24,8 @@ YF_INTERVALS = {
     "1d": "1d",
 }
 
-# yfinance max period per interval
-# 1m: 7 days, 5m: 60 days, 15m: 60 days, 1h: 730 days
-YF_MAX_DAYS = {
+# yfinance max lookback from today per interval
+YF_MAX_LOOKBACK_DAYS = {
     "1m": 7,
     "5m": 60,
     "15m": 60,
@@ -113,36 +111,51 @@ class ForexFetcher:
     ) -> list[Candle]:
         """
         Fetch all candles in a date range.
-        Handles yfinance limitations on max range per interval.
+
+        yfinance requires that start be within the last N days from today
+        (e.g. 60 days for 5m/15m). This method clamps the start date
+        accordingly and warns if the requested range is truncated.
         """
-        max_days = YF_MAX_DAYS.get(timeframe, 60)
-        all_candles: list[Candle] = []
-        current_start = start
+        max_lookback = YF_MAX_LOOKBACK_DAYS.get(timeframe, 60)
+        now = datetime.now(UTC_TZ)
+        earliest_allowed = now - timedelta(days=max_lookback - 2)  # 2-day safety margin
+        pair_name = get_pair_name(symbol)
 
-        while current_start < end:
-            chunk_end = min(current_start + timedelta(days=max_days - 1), end)
-
-            batch = self.fetch_candles(
-                symbol, timeframe,
-                start=current_start, end=chunk_end,
+        actual_start = start
+        if start < earliest_allowed:
+            actual_start = earliest_allowed
+            logger.warning(
+                f"{pair_name} {timeframe}: clamping start from {start.date()} "
+                f"to {actual_start.date()} (yfinance {max_lookback}-day limit)"
             )
 
-            for c in batch:
-                if c.timestamp < start.astimezone(UTC_TZ):
-                    continue
-                if c.timestamp > end.astimezone(UTC_TZ):
-                    break
-                if not all_candles or c.timestamp > all_candles[-1].timestamp:
-                    all_candles.append(c)
+        if actual_start >= end:
+            logger.error(
+                f"{pair_name} {timeframe}: entire range {start.date()} → {end.date()} "
+                f"is beyond yfinance {max_lookback}-day limit"
+            )
+            return []
 
-            current_start = chunk_end + timedelta(days=1)
-
-        pair_name = get_pair_name(symbol)
-        logger.info(
-            f"Fetched {len(all_candles)} {timeframe} candles for {pair_name} "
-            f"from {start.date()} to {end.date()}"
+        # Fetch in a single request (within the allowed window)
+        all_candles = self.fetch_candles(
+            symbol, timeframe,
+            start=actual_start, end=end,
         )
-        return all_candles
+
+        start_utc = start.astimezone(UTC_TZ) if start.tzinfo else start.replace(tzinfo=UTC_TZ)
+        end_utc = end.astimezone(UTC_TZ) if end.tzinfo else end.replace(tzinfo=UTC_TZ)
+
+        # Filter to exact range
+        filtered = [
+            c for c in all_candles
+            if start_utc <= c.timestamp <= end_utc
+        ]
+
+        logger.info(
+            f"Fetched {len(filtered)} {timeframe} candles for {pair_name} "
+            f"from {actual_start.date()} to {end.date()}"
+        )
+        return filtered
 
     def get_current_price(self, symbol: str) -> Decimal:
         """Get current market price."""
