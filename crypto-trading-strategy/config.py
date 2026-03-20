@@ -23,7 +23,7 @@ MAX_LEVERAGE = 10
 MIN_LEVERAGE = 2
 MAX_RISK_PER_TRADE = 0.05      # 5% of equity — safe for $200 account
 MAX_CONCURRENT_POSITIONS = 3
-MAX_POSITION_SIZE_USD = 500.0    # Conservative cap for small account
+MAX_POSITION_SIZE_USD = 2000.0   # Cap for risk-based sizing (actual risk controlled by SL)
 
 # ─── Risk Management ─────────────────────────────────────────────
 DAILY_LOSS_LIMIT = 0.08         # 8% of day-start equity
@@ -55,14 +55,14 @@ BB_STD = 2.0
 
 # ATR
 ATR_PERIOD = 14
-ATR_SL_MULTIPLIER = 2.0        # SL = ATR × this (wider to avoid premature stops)
+ATR_SL_MULTIPLIER = 1.5        # SL = ATR × this
 ATR_TRAILING_MULTIPLIER = 1.0  # Trailing stop distance
 
 # Volume
 VOLUME_THRESHOLD = 1.3          # Volume must be > 1.3× average
 
 # ─── Trade Management ────────────────────────────────────────────
-REWARD_RISK_RATIO = 2.5         # TP at 2.5× SL distance
+REWARD_RISK_RATIO = 2.0         # TP at 2.0× SL distance
 TIME_STOP_HOURS = 8             # Close if no movement after 8h
 MIN_CONFIDENCE = 0.70           # Minimum signal confidence to trade (4+ confirmations)
 

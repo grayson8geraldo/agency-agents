@@ -169,7 +169,9 @@ class Backtester:
                 leverage = self.risk_mgr.calculate_leverage(vol_regime)
                 leverage = min(leverage, signal.leverage)
 
-                position_size = self.risk_mgr.calculate_position_size(signal.confidence)
+                position_size = self.risk_mgr.calculate_position_size(
+                    signal.confidence, signal.entry_price, signal.stop_loss
+                )
                 if position_size <= 1:
                     continue
 
@@ -248,6 +250,15 @@ class Backtester:
         print(f"  Largest loss:       ${stats.get('largest_loss', 0):.2f}")
         print(f"  Total fees:         ${stats.get('total_fees', 0):.2f}")
         print(f"  Total funding:      ${stats.get('total_funding', 0):.2f}")
+        # Close reason breakdown
+        reasons = {}
+        for t in self.exchange.trade_history:
+            reasons[t.close_reason] = reasons.get(t.close_reason, 0) + 1
+        if reasons:
+            print("-" * 60)
+            print("  Close reasons:")
+            for reason, count in sorted(reasons.items(), key=lambda x: -x[1]):
+                print(f"    {reason:20s} {count:>3}")
         print("-" * 60)
         print(f"  Risk mode:          {risk_report.get('mode', 'N/A')}")
         print(f"  Kelly fraction:     {risk_report.get('kelly_fraction', 0):.4f}")

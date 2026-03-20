@@ -131,12 +131,16 @@ class RiskManager:
             return base_risk * 0.5
         return 0.0
 
-    def calculate_position_size(self, confidence: float = 1.0) -> float:
+    def calculate_position_size(
+        self, confidence: float = 1.0, entry_price: float = 0.0, stop_loss: float = 0.0
+    ) -> float:
         """
-        Calculate position size in USD based on risk allocation and Kelly criterion.
-        Uses max_risk as the primary driver; Kelly acts as a secondary cap
-        once we have enough trade history.
-        confidence: 0.5 to 1.0 signal quality multiplier
+        Calculate position size in USD using proper risk-based sizing.
+        Risk amount = equity × max_risk_pct × confidence
+        Position size = risk_amount / sl_distance_pct
+
+        This ensures we always risk the intended % of equity per trade,
+        regardless of how wide/tight the stop loss is.
         """
         if self.state.mode == RiskMode.HALTED:
             return 0.0
@@ -145,20 +149,32 @@ class RiskManager:
         max_risk = self.get_max_risk_per_trade()
         leverage = self.get_max_leverage()
 
-        # Primary: risk-based allocation
-        size = self.state.equity * max_risk * leverage * confidence
+        # Calculate SL distance as fraction of entry price
+        if entry_price > 0 and stop_loss > 0:
+            sl_distance_pct = abs(entry_price - stop_loss) / entry_price
+        else:
+            sl_distance_pct = 0.02  # Fallback: assume 2% SL distance
+
+        # Prevent division by zero or unreasonably tight stops
+        sl_distance_pct = max(sl_distance_pct, 0.001)
+
+        # Risk amount in USD
+        risk_amount = self.state.equity * max_risk * confidence
+
+        # Position size = risk / SL distance
+        size = risk_amount / sl_distance_pct
 
         # Secondary cap: Kelly criterion (only when proven profitable edge)
         kelly = self.kelly_fraction()
         if self.state.total_trades >= self.config.MIN_TRADES_FOR_KELLY and kelly > 0:
-            # Only cap by Kelly if win rate is above breakeven for the R:R ratio
             if self.avg_loss != 0:
                 wl_ratio = self.avg_win / abs(self.avg_loss)
                 breakeven_wr = 1.0 / (1.0 + wl_ratio)
             else:
                 breakeven_wr = 0.5
             if self.win_rate > breakeven_wr:
-                kelly_cap = self.state.equity * kelly * leverage
+                kelly_risk = self.state.equity * kelly
+                kelly_cap = kelly_risk / sl_distance_pct
                 size = min(size, kelly_cap)
 
         # Reduce for consecutive losses
