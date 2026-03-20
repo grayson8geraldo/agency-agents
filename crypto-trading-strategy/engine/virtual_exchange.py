@@ -37,7 +37,6 @@ class Position:
     open_bar: int = 0              # Bar index at open (for backtester)
     unrealized_pnl: float = 0.0
     funding_paid: float = 0.0
-    peak_favorable_price: float = 0.0  # Best price seen (for trailing stop)
 
 
 @dataclass
@@ -148,7 +147,6 @@ class VirtualExchange:
             stop_loss=stop_loss,
             take_profit=take_profit,
             open_time=datetime.now(timezone.utc).isoformat(),
-            peak_favorable_price=fill_price,
         )
 
         self.positions[position.id] = position
@@ -160,6 +158,7 @@ class VirtualExchange:
         Check for SL/TP/liquidation/time stop hits.
         """
         to_close = []
+        time_stop_bars = int(getattr(self.config, 'TIME_STOP_HOURS', 8) * 4)
 
         for pid, pos in self.positions.items():
             price = prices.get(pos.symbol)
@@ -177,27 +176,6 @@ class VirtualExchange:
                 to_close.append((pid, price, "LIQUIDATED"))
                 continue
 
-            # Trailing stop: move SL to breakeven once price reaches 1R in our favor
-            sl_dist = abs(pos.entry_price - pos.stop_loss)
-            if pos.side == PositionSide.LONG:
-                if price > pos.peak_favorable_price:
-                    pos.peak_favorable_price = price
-                favorable_move = (pos.peak_favorable_price - pos.entry_price) / sl_dist if sl_dist > 0 else 0
-                if favorable_move >= 1.0:
-                    # Price reached 1:1 R:R — move SL to breakeven
-                    new_sl = pos.entry_price
-                    if new_sl > pos.stop_loss:
-                        pos.stop_loss = new_sl
-            else:
-                # SHORT: lower price is favorable
-                if pos.peak_favorable_price == 0 or price < pos.peak_favorable_price:
-                    pos.peak_favorable_price = price
-                favorable_move = (pos.entry_price - pos.peak_favorable_price) / sl_dist if sl_dist > 0 else 0
-                if favorable_move >= 1.0:
-                    new_sl = pos.entry_price
-                    if new_sl < pos.stop_loss:
-                        pos.stop_loss = new_sl
-
             # Check stop loss
             if pos.side == PositionSide.LONG and price <= pos.stop_loss:
                 to_close.append((pid, pos.stop_loss, "STOP_LOSS"))
@@ -213,6 +191,15 @@ class VirtualExchange:
             elif pos.side == PositionSide.SHORT and price <= pos.take_profit:
                 to_close.append((pid, pos.take_profit, "TAKE_PROFIT"))
                 continue
+
+            # Time stop: close if position stagnant for too long
+            if current_bar > 0 and pos.open_bar > 0:
+                bars_held = current_bar - pos.open_bar
+                if bars_held >= time_stop_bars:
+                    pnl_pct = abs(pos.unrealized_pnl) / pos.margin if pos.margin > 0 else 0
+                    if pnl_pct < 0.05:  # Less than 5% move on margin
+                        to_close.append((pid, price, "TIME_STOP"))
+                        continue
 
             # Apply funding rate (every 8 hours in real exchange, simplified here)
             if funding_rates and pos.symbol in funding_rates:
