@@ -71,6 +71,76 @@ def cmd_backtest(args):
         account.save_state()
 
 
+def cmd_backtest_all(args):
+    """Run backtest on all forex pairs."""
+    from .backtester import Backtester
+
+    start = datetime.strptime(args.start, "%Y-%m-%d").replace(tzinfo=UTC_TZ)
+    end = datetime.strptime(args.end, "%Y-%m-%d").replace(tzinfo=UTC_TZ)
+
+    results = []
+    for ticker, pair_cfg in sorted(PAIR_CONFIG.items()):
+        pair_name = pair_cfg["name"]
+        print(f"\n{'#'*60}")
+        print(f"  {pair_name}")
+        print(f"{'#'*60}")
+
+        config = BotConfig(
+            strategy=StrategyConfig(symbol=ticker),
+            risk=RiskConfig(initial_balance=Decimal(args.balance)),
+            log_level=args.log_level,
+        )
+        backtester = Backtester(config)
+        account = backtester.run(start, end, ticker)
+
+        s = account.state
+        results.append({
+            "pair": pair_name,
+            "trades": s.total_trades,
+            "wins": s.winning_trades,
+            "losses": s.losing_trades,
+            "win_rate": s.win_rate,
+            "pnl": s.total_pnl,
+            "pnl_pips": s.total_pnl_pips,
+            "return_pct": s.total_return_pct,
+            "max_dd": s.max_drawdown_pct,
+        })
+
+    # Summary table
+    print(f"\n\n{'='*85}")
+    print("  ALL PAIRS BACKTEST SUMMARY")
+    print(f"  Period: {args.start} → {args.end} | Balance: ${args.balance}")
+    print(f"{'='*85}")
+    print(
+        f"{'Pair':<10} {'Trades':>6} {'Wins':>5} {'Loss':>5} "
+        f"{'WR%':>6} {'Pips':>8} {'P&L':>9} {'Ret%':>7} {'MaxDD%':>7}"
+    )
+    print("-" * 85)
+
+    total_pnl = Decimal("0")
+    total_pips = Decimal("0")
+    total_trades = 0
+
+    for r in results:
+        total_pnl += r["pnl"]
+        total_pips += r["pnl_pips"]
+        total_trades += r["trades"]
+        print(
+            f"{r['pair']:<10} {r['trades']:>6} {r['wins']:>5} {r['losses']:>5} "
+            f"{r['win_rate']:>5.1f}% {r['pnl_pips']:>+7.1f} "
+            f"{'${:+.2f}'.format(r['pnl']):>9} {r['return_pct']:>+6.1f}% "
+            f"{r['max_dd']:>6.1f}%"
+        )
+
+    print("-" * 85)
+    print(
+        f"{'TOTAL':<10} {total_trades:>6} {'':>5} {'':>5} "
+        f"{'':>6} {total_pips:>+7.1f} "
+        f"{'${:+.2f}'.format(total_pnl):>9}"
+    )
+    print(f"{'='*85}\n")
+
+
 def cmd_status(args):
     """Show current account status."""
     from .virtual_account import VirtualAccount
@@ -114,6 +184,12 @@ def main():
     bt_p.add_argument("--end", required=True, help="End date (YYYY-MM-DD)")
     bt_p.add_argument("--save", action="store_true", help="Save state after backtest")
 
+    # ── backtest-all ──
+    bta_p = subparsers.add_parser("backtest-all", help="Backtest all pairs")
+    bta_p.add_argument("--balance", default="200", help="Initial virtual balance (USD)")
+    bta_p.add_argument("--start", required=True, help="Start date (YYYY-MM-DD)")
+    bta_p.add_argument("--end", required=True, help="End date (YYYY-MM-DD)")
+
     # ── status ──
     subparsers.add_parser("status", help="Show account status")
 
@@ -126,6 +202,7 @@ def main():
     commands = {
         "live": cmd_live,
         "backtest": cmd_backtest,
+        "backtest-all": cmd_backtest_all,
         "status": cmd_status,
         "pairs": cmd_pairs,
     }
