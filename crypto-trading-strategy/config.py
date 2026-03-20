@@ -63,10 +63,8 @@ VOLUME_THRESHOLD = 1.3          # Volume must be > 1.3× average
 
 # ─── Trade Management ────────────────────────────────────────────
 REWARD_RISK_RATIO = 2.5         # TP at 2.5× SL distance
-PARTIAL_TP_RATIO = 0.5          # Take 50% off at 1:1 RR
-TIME_STOP_HOURS = 4             # Close if no movement after 4h
-TRAILING_ACTIVATION_RR = 1.5    # Activate trailing at 1.5× risk
-MIN_CONFIDENCE = 0.50           # Minimum signal confidence to trade
+TIME_STOP_HOURS = 8             # Close if no movement after 8h
+MIN_CONFIDENCE = 0.70           # Minimum signal confidence to trade (4+ confirmations)
 
 # ─── Volatility Regime Thresholds (ATR percentile) ───────────────
 VOL_LOW = 25                    # Below 25th percentile

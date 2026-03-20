@@ -33,7 +33,6 @@ class Position:
     margin: float             # Collateral locked
     stop_loss: float
     take_profit: float
-    partial_tp_taken: bool = False
     open_time: str = ""
     open_bar: int = 0              # Bar index at open (for backtester time stop)
     unrealized_pnl: float = 0.0
@@ -159,7 +158,6 @@ class VirtualExchange:
         Check for SL/TP/liquidation/time stop hits.
         """
         to_close = []
-        to_partial = []
 
         # Time stop: bars per hour at 15m candles = 4
         time_stop_bars = int(getattr(self.config, 'TIME_STOP_HOURS', 4) * 4)
@@ -187,18 +185,6 @@ class VirtualExchange:
             elif pos.side == PositionSide.SHORT and price >= pos.stop_loss:
                 to_close.append((pid, pos.stop_loss, "STOP_LOSS"))
                 continue
-
-            # Partial take-profit at 1:1 RR
-            if not pos.partial_tp_taken:
-                sl_dist = abs(pos.entry_price - pos.stop_loss)
-                if pos.side == PositionSide.LONG:
-                    partial_tp_price = pos.entry_price + sl_dist
-                    if price >= partial_tp_price:
-                        to_partial.append((pid, partial_tp_price))
-                else:
-                    partial_tp_price = pos.entry_price - sl_dist
-                    if price <= partial_tp_price:
-                        to_partial.append((pid, partial_tp_price))
 
             # Check take profit
             if pos.side == PositionSide.LONG and price >= pos.take_profit:
@@ -233,31 +219,6 @@ class VirtualExchange:
                     self.balance += funding_cost
                     pos.funding_paid -= funding_cost
                     self.total_funding_paid -= funding_cost
-
-        # Execute partial take-profits (close 50% of position)
-        partial_ratio = getattr(self.config, 'PARTIAL_TP_RATIO', 0.5)
-        for pid, partial_price in to_partial:
-            pos = self.positions.get(pid)
-            if pos is None or pos.partial_tp_taken:
-                continue
-            close_amount = pos.size_usd * partial_ratio
-            # Realize partial PnL
-            if pos.side == PositionSide.LONG:
-                partial_pnl = (partial_price - pos.entry_price) / pos.entry_price * close_amount
-            else:
-                partial_pnl = (pos.entry_price - partial_price) / pos.entry_price * close_amount
-            fee = close_amount * self.config.MAKER_FEE
-            self.total_fees_paid += fee
-            net_partial = partial_pnl - fee
-            # Return partial margin + profit
-            partial_margin = pos.margin * partial_ratio
-            self.balance += partial_margin + net_partial
-            # Reduce position
-            pos.size_usd -= close_amount
-            pos.margin -= partial_margin
-            pos.partial_tp_taken = True
-            # Move stop-loss to breakeven after partial TP
-            pos.stop_loss = pos.entry_price
 
         # Close positions that hit exit conditions
         for pid, exit_price, reason in to_close:
