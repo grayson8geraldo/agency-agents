@@ -34,9 +34,10 @@ class Position:
     stop_loss: float
     take_profit: float
     open_time: str = ""
-    open_bar: int = 0              # Bar index at open (for backtester time stop)
+    open_bar: int = 0              # Bar index at open (for backtester)
     unrealized_pnl: float = 0.0
     funding_paid: float = 0.0
+    peak_favorable_price: float = 0.0  # Best price seen (for trailing stop)
 
 
 @dataclass
@@ -147,6 +148,7 @@ class VirtualExchange:
             stop_loss=stop_loss,
             take_profit=take_profit,
             open_time=datetime.now(timezone.utc).isoformat(),
+            peak_favorable_price=fill_price,
         )
 
         self.positions[position.id] = position
@@ -174,6 +176,38 @@ class VirtualExchange:
             if pos.margin + pos.unrealized_pnl <= 0:
                 to_close.append((pid, price, "LIQUIDATED"))
                 continue
+
+            # Trailing stop: move SL toward breakeven as price moves favorably
+            sl_dist = abs(pos.entry_price - pos.stop_loss)
+            if pos.side == PositionSide.LONG:
+                # Track peak price
+                if price > pos.peak_favorable_price:
+                    pos.peak_favorable_price = price
+                # How far has price moved from entry (in SL units)?
+                favorable_move = (pos.peak_favorable_price - pos.entry_price) / sl_dist if sl_dist > 0 else 0
+                if favorable_move >= 1.0:
+                    # Price reached 1:1 R:R — move SL to breakeven
+                    new_sl = pos.entry_price
+                    if new_sl > pos.stop_loss:
+                        pos.stop_loss = new_sl
+                elif favorable_move >= 0.5:
+                    # Price reached 0.5:1 — move SL halfway to breakeven
+                    new_sl = pos.stop_loss + sl_dist * 0.5
+                    if new_sl > pos.stop_loss:
+                        pos.stop_loss = new_sl
+            else:
+                # SHORT: lower price is favorable
+                if pos.peak_favorable_price == 0 or price < pos.peak_favorable_price:
+                    pos.peak_favorable_price = price
+                favorable_move = (pos.entry_price - pos.peak_favorable_price) / sl_dist if sl_dist > 0 else 0
+                if favorable_move >= 1.0:
+                    new_sl = pos.entry_price
+                    if new_sl < pos.stop_loss:
+                        pos.stop_loss = new_sl
+                elif favorable_move >= 0.5:
+                    new_sl = pos.stop_loss - sl_dist * 0.5
+                    if new_sl < pos.stop_loss:
+                        pos.stop_loss = new_sl
 
             # Check stop loss
             if pos.side == PositionSide.LONG and price <= pos.stop_loss:
