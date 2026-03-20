@@ -410,6 +410,16 @@ See the **[Nexus Spatial Discovery Exercise](examples/nexus-spatial-discovery.md
 
 ---
 
+### Scenario 5: TikTok Ad Creatives Brainstorm
+
+**Your Team**: 9 agents from Marketing, Paid Media, and Design divisions.
+
+See the **[TikTok Ad Creatives Workflow](examples/workflow-tiktok-ad-creatives.md)** — a complete pipeline where TikTok Strategist, Content Creator, Ad Creative Strategist, Visual Storyteller, Whimsy Injector, Brand Guardian, Image Prompt Engineer, Carousel Growth Engine, and Paid Social Strategist collaborate to produce campaign-ready TikTok ad creatives: scripts, storyboards, ad copy, visual prompts, and carousel adaptations.
+
+**Result**: Full batch of on-brand, trend-aligned TikTok ad creatives with A/B test plans and campaign structure — ready for production and launch.
+
+---
+
 ## 🤝 Contributing
 
 We welcome contributions! Here's how you can help:
