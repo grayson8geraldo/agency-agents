@@ -177,22 +177,15 @@ class VirtualExchange:
                 to_close.append((pid, price, "LIQUIDATED"))
                 continue
 
-            # Trailing stop: move SL toward breakeven as price moves favorably
+            # Trailing stop: move SL to breakeven once price reaches 1R in our favor
             sl_dist = abs(pos.entry_price - pos.stop_loss)
             if pos.side == PositionSide.LONG:
-                # Track peak price
                 if price > pos.peak_favorable_price:
                     pos.peak_favorable_price = price
-                # How far has price moved from entry (in SL units)?
                 favorable_move = (pos.peak_favorable_price - pos.entry_price) / sl_dist if sl_dist > 0 else 0
                 if favorable_move >= 1.0:
                     # Price reached 1:1 R:R — move SL to breakeven
                     new_sl = pos.entry_price
-                    if new_sl > pos.stop_loss:
-                        pos.stop_loss = new_sl
-                elif favorable_move >= 0.5:
-                    # Price reached 0.5:1 — move SL halfway to breakeven
-                    new_sl = pos.stop_loss + sl_dist * 0.5
                     if new_sl > pos.stop_loss:
                         pos.stop_loss = new_sl
             else:
@@ -202,10 +195,6 @@ class VirtualExchange:
                 favorable_move = (pos.entry_price - pos.peak_favorable_price) / sl_dist if sl_dist > 0 else 0
                 if favorable_move >= 1.0:
                     new_sl = pos.entry_price
-                    if new_sl < pos.stop_loss:
-                        pos.stop_loss = new_sl
-                elif favorable_move >= 0.5:
-                    new_sl = pos.stop_loss - sl_dist * 0.5
                     if new_sl < pos.stop_loss:
                         pos.stop_loss = new_sl
 
