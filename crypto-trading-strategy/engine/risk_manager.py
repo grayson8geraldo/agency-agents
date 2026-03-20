@@ -111,7 +111,7 @@ class RiskManager:
         """Get maximum allowed leverage based on current risk mode."""
         mode = self.state.mode
         if mode == RiskMode.AGGRESSIVE:
-            return self.config.MAX_LEVERAGE
+            return min(self.config.MAX_LEVERAGE, 8)
         elif mode == RiskMode.NORMAL:
             return self.config.DEFAULT_LEVERAGE
         elif mode == RiskMode.DEFENSIVE:
@@ -254,9 +254,10 @@ class RiskManager:
         elif dd >= self.config.MAX_DRAWDOWN or self.state.consecutive_losses >= self.config.CONSECUTIVE_LOSS_DEFENSIVE:
             self.state.mode = RiskMode.DEFENSIVE
         elif (
-            self.state.equity >= self.config.STARTING_BALANCE * 1.5
-            and self.win_rate >= 0.60
-            and self.state.total_trades >= 20
+            self.state.equity >= self.config.STARTING_BALANCE * 1.15
+            and self.win_rate >= 0.45
+            and self.state.total_trades >= 10
+            and self.profit_factor >= 1.2
         ):
             self.state.mode = RiskMode.AGGRESSIVE
         else:

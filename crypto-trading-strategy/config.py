@@ -28,8 +28,8 @@ MAX_POSITION_SIZE_USD = 2000.0   # Cap for risk-based sizing (actual risk contro
 # ─── Risk Management ─────────────────────────────────────────────
 DAILY_LOSS_LIMIT = 0.10         # 10% of day-start equity
 WEEKLY_LOSS_LIMIT = 0.20        # 20% of week-start equity
-MAX_DRAWDOWN = 0.25             # 25% from peak → defensive mode
-KILL_SWITCH_DRAWDOWN = 0.35     # 35% from peak — halt all trading
+MAX_DRAWDOWN = 0.15             # 15% from peak → defensive mode
+KILL_SWITCH_DRAWDOWN = 0.25     # 25% from peak — halt all trading
 MARGIN_RATIO_MIN = 1.5          # 150% margin ratio minimum
 
 # ─── Strategy Parameters ─────────────────────────────────────────
@@ -64,7 +64,7 @@ VOLUME_THRESHOLD = 1.3          # Volume must be > 1.3× average
 # ─── Trade Management ────────────────────────────────────────────
 REWARD_RISK_RATIO = 2.0         # TP at 2.0× SL distance
 TIME_STOP_HOURS = 8             # Close if no movement after 8h
-MIN_CONFIDENCE = 0.60           # Minimum signal confidence to trade (3+ confirmations)
+MIN_CONFIDENCE = 0.70           # Minimum signal confidence to trade (4+ confirmations)
 
 # ─── Volatility Regime Thresholds (ATR percentile) ───────────────
 VOL_LOW = 25                    # Below 25th percentile
@@ -95,7 +95,7 @@ DEFAULT_WIN_LOSS_RATIO = 1.8    # Conservative assumed avg_win/avg_loss
 MIN_POSITION_SIZE_PCT = 0.01    # 1% of equity minimum ($2 on $200 account)
 
 # ─── Defensive Mode Triggers ─────────────────────────────────────
-SIGNAL_COOLDOWN_BARS = 4        # Minimum bars between signals per symbol (1 hour at 15m)
+SIGNAL_COOLDOWN_BARS = 8        # Minimum bars between signals per symbol (2 hours at 15m)
 
 CONSECUTIVE_LOSS_REDUCE = 4     # Reduce size after N consecutive losses
 CONSECUTIVE_LOSS_DEFENSIVE = 8  # Enter defensive mode after N losses
