@@ -1,6 +1,6 @@
 """
 Paper Trader — Live paper trading with real Bybit data and virtual execution.
-Uses only public endpoints (no API keys). Rich console dashboard.
+Uses only public endpoints (no API keys). Event-driven output (no spam).
 """
 
 import time
@@ -10,15 +10,12 @@ import pandas as pd
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
-from rich.layout import Layout
-from rich.text import Text
 from rich import box
 
 from engine.risk_manager import RiskManager
 from engine.signal_generator import SignalGenerator, SignalType
 from engine.virtual_exchange import PositionSide, VirtualExchange
 from utils.data_fetcher import fetch_ohlcv, fetch_funding_rate, fetch_ticker, get_exchange
-from utils.indicators import add_all_indicators
 
 
 console = Console()
@@ -26,11 +23,11 @@ console = Console()
 
 class PaperTrader:
     """
-    Real-time paper trading engine with rich dashboard:
+    Real-time paper trading engine:
     - Fetches live prices from Bybit (public, no API key)
-    - Generates signals using the same strategy as backtester
-    - Executes on virtual exchange with realistic fees/slippage
-    - Displays live dashboard with positions, PnL, risk state
+    - Runs indefinitely until Ctrl+C
+    - Only prints when something happens (trade, signal, error)
+    - Periodic status every N minutes
     """
 
     def __init__(self, config):
@@ -44,36 +41,49 @@ class PaperTrader:
         self._last_day = self.start_time.date()
         self._last_week = self.start_time.isocalendar()[1]
         self._current_prices: dict[str, float] = {}
-        self._event_log: list[str] = []
+        self._prev_prices: dict[str, float] = {}
         self._signals_checked = 0
         self._errors = 0
+        self._last_status_time = 0.0
 
-    def run(self, duration_minutes: int = 60, interval_seconds: int = 60):
+    def run(self, interval_seconds: int = 60, status_interval_minutes: int = 5):
         """
-        Run paper trading for a specified duration.
+        Run paper trading indefinitely.
 
         Args:
-            duration_minutes: How long to run (default 60 min)
             interval_seconds: How often to check for signals (default 60s)
+            status_interval_minutes: How often to print status summary (default 5 min)
         """
-        self._print_banner(duration_minutes, interval_seconds)
-        end_time = time.time() + duration_minutes * 60
+        self._print_banner(interval_seconds)
+        self._last_status_time = time.time()
 
         try:
-            while time.time() < end_time:
+            while True:
                 self.iteration += 1
-                self._tick()
-                self._render_dashboard(duration_minutes)
+                events = self._tick()
+
+                # Print events (only if something happened)
+                for event in events:
+                    console.print(event)
+
+                # Periodic status
+                now = time.time()
+                if now - self._last_status_time >= status_interval_minutes * 60:
+                    self._print_status()
+                    self._last_status_time = now
 
                 # Check if target reached
                 if self.exchange.equity >= self.config.TARGET_BALANCE:
-                    self._log("TARGET REACHED!", style="bold green")
+                    console.print(
+                        f"  [bold green]TARGET REACHED![/bold green] "
+                        f"Equity: ${self.exchange.equity:.2f}"
+                    )
                     break
 
                 # Check kill switch
                 can_trade, reason = self.risk_mgr.can_trade()
                 if not can_trade and "KILL" in reason:
-                    self._log(f"HALTED: {reason}", style="bold red")
+                    console.print(f"  [bold red]{reason}[/bold red]")
                     break
 
                 # Auto-save every 10 iterations
@@ -83,25 +93,28 @@ class PaperTrader:
                 time.sleep(interval_seconds)
 
         except KeyboardInterrupt:
-            self._log("Stopped by user (Ctrl+C)")
+            console.print(f"\n  [dim]Stopped by user (Ctrl+C)[/dim]")
 
         self._print_final_report()
 
-    def _tick(self):
-        """Single iteration: fetch data, check signals, manage positions."""
+    def _tick(self) -> list[str]:
+        """Single iteration. Returns list of event messages to print."""
+        events = []
+
         # Daily/weekly risk reset
         now = datetime.now(timezone.utc)
         if now.date() != self._last_day:
             self.risk_mgr.new_day()
             self._last_day = now.date()
-            self._log("New day — daily risk counters reset")
+            events.append(f"  [dim]{self._ts()} New day — daily risk reset[/dim]")
         current_week = now.isocalendar()[1]
         if current_week != self._last_week:
             self.risk_mgr.new_week()
             self._last_week = current_week
-            self._log("New week — weekly risk counters reset")
+            events.append(f"  [dim]{self._ts()} New week — weekly risk reset[/dim]")
 
         # Fetch current prices
+        self._prev_prices = dict(self._current_prices)
         self._current_prices = {}
         for symbol in self.config.TRADING_PAIRS:
             try:
@@ -112,8 +125,8 @@ class PaperTrader:
                 self._errors += 1
 
         if not self._current_prices:
-            self._log("No prices fetched — network issue?", style="yellow")
-            return
+            events.append(f"  [yellow]{self._ts()} No prices — network issue?[/yellow]")
+            return events
 
         # Fetch funding rates
         funding_rates = {}
@@ -126,6 +139,9 @@ class PaperTrader:
         # Check time stops (real-time based)
         self._check_time_stops()
 
+        # Track trade count before update
+        trades_before = len(self.exchange.trade_history)
+
         # Update positions with current prices
         self.exchange.update_positions(self._current_prices, funding_rates)
 
@@ -134,25 +150,26 @@ class PaperTrader:
         if self.exchange.equity > self.risk_mgr.state.peak_equity:
             self.risk_mgr.state.peak_equity = self.exchange.equity
 
-        # Record closed trades
+        # Record closed trades and report them
         while len(self.exchange.trade_history) > self.risk_mgr.state.total_trades:
             idx = self.risk_mgr.state.total_trades
             trade = self.exchange.trade_history[idx]
             self.risk_mgr.record_trade(trade.net_pnl, trade.close_reason)
             pnl_color = "green" if trade.net_pnl > 0 else "red"
-            self._log(
-                f"CLOSED {trade.symbol} {trade.side} "
-                f"PnL=${trade.net_pnl:+.2f} ({trade.close_reason})",
-                style=pnl_color,
+            duration_str = f"{trade.duration_minutes:.0f}m" if trade.duration_minutes > 0 else ""
+            events.append(
+                f"  [{pnl_color}]{self._ts()} CLOSED {trade.symbol} {trade.side} "
+                f"@ ${trade.exit_price:,.2f} | "
+                f"PnL=${trade.net_pnl:+.2f} | {trade.close_reason} {duration_str}[/{pnl_color}]"
             )
 
         # Check if can open new positions
         can_trade, reason = self.risk_mgr.can_trade()
         if not can_trade:
-            return
+            return events
 
         if len(self.exchange.positions) >= self.config.MAX_CONCURRENT_POSITIONS:
-            return
+            return events
 
         # Check signals for each pair
         for symbol in self.config.TRADING_PAIRS:
@@ -203,14 +220,18 @@ class PaperTrader:
             )
 
             if pos:
-                self._log(
-                    f"OPEN {signal.signal_type.value} {symbol} "
-                    f"@ ${signal.entry_price:.2f} | "
+                events.append(
+                    f"  [cyan]{self._ts()} OPEN {signal.signal_type.value} {symbol} "
+                    f"@ ${signal.entry_price:,.2f} | "
                     f"Size=${position_size:.2f} Lev={leverage}x | "
-                    f"SL={signal.stop_loss:.2f} TP={signal.take_profit:.2f} | "
-                    f"Conf={signal.confidence:.0%} [{signal.reason}]",
-                    style="cyan",
+                    f"SL=${signal.stop_loss:,.2f} TP=${signal.take_profit:,.2f} | "
+                    f"Conf={signal.confidence:.0%} Vol={signal.volatility_regime}[/cyan]"
                 )
+                events.append(
+                    f"  [dim]         Reason: {signal.reason}[/dim]"
+                )
+
+        return events
 
     def _check_time_stops(self):
         """Close positions held longer than TIME_STOP_HOURS (real-time)."""
@@ -223,7 +244,6 @@ class PaperTrader:
                 open_dt = datetime.fromisoformat(pos.open_time)
                 held_seconds = (now - open_dt).total_seconds()
                 if held_seconds >= time_stop_seconds:
-                    # Only time-stop if position is near breakeven
                     pnl_pct = abs(pos.unrealized_pnl) / pos.margin if pos.margin > 0 else 0
                     if pnl_pct < 0.05:
                         price = self._current_prices.get(pos.symbol, pos.entry_price)
@@ -234,199 +254,74 @@ class PaperTrader:
         for pid, price in to_close:
             self.exchange.close_position(pid, price, "TIME_STOP")
 
-    def _log(self, message: str, style: str = "white"):
-        """Add an event to the log with timestamp."""
-        ts = datetime.now(timezone.utc).strftime("%H:%M:%S")
-        self._event_log.append(f"[{style}][{ts}] {message}[/{style}]")
-        # Keep last 20 events
-        if len(self._event_log) > 20:
-            self._event_log = self._event_log[-20:]
+    def _ts(self) -> str:
+        """Current timestamp string."""
+        return datetime.now(timezone.utc).strftime("%H:%M:%S")
 
-    def _print_banner(self, duration_minutes: int, interval_seconds: int):
+    def _print_banner(self, interval_seconds: int):
         """Print startup banner."""
-        console.clear()
         console.print(Panel(
             f"[bold cyan]PAPER TRADER[/bold cyan] — Live Virtual Trading\n\n"
             f"  Balance:  [green]${self.config.STARTING_BALANCE:.2f}[/green]\n"
             f"  Target:   [yellow]${self.config.TARGET_BALANCE:.2f}[/yellow]\n"
             f"  Pairs:    {', '.join(self.config.TRADING_PAIRS)}\n"
-            f"  Duration: {duration_minutes} min | Check every {interval_seconds}s\n"
+            f"  Interval: every {interval_seconds}s\n"
             f"  Source:   Bybit public API (no keys needed)\n\n"
-            f"  [dim]Press Ctrl+C to stop[/dim]",
+            f"  [dim]Runs indefinitely. Press Ctrl+C to stop.[/dim]\n"
+            f"  [dim]Only prints when something happens.[/dim]",
             title="Crypto Futures Paper Trading",
             border_style="cyan",
         ))
         console.print()
 
-    def _render_dashboard(self, duration_minutes: int):
-        """Render the live trading dashboard."""
-        console.clear()
-        elapsed = (datetime.now(timezone.utc) - self.start_time).total_seconds()
-        elapsed_min = elapsed / 60
-        remaining = max(0, duration_minutes - elapsed_min)
-
-        # Header
+    def _print_status(self):
+        """Print periodic status summary — compact, no clear screen."""
+        elapsed_min = (datetime.now(timezone.utc) - self.start_time).total_seconds() / 60
         equity = self.exchange.equity
         pnl = equity - self.config.STARTING_BALANCE
         pnl_pct = (pnl / self.config.STARTING_BALANCE) * 100
         pnl_color = "green" if pnl >= 0 else "red"
         dd = self.risk_mgr.drawdown_pct * 100
         mode = self.risk_mgr.state.mode.value.upper()
-        mode_color = {
-            "NORMAL": "green", "AGGRESSIVE": "yellow",
-            "DEFENSIVE": "red", "HALTED": "bold red",
-        }.get(mode, "white")
+        n_pos = len(self.exchange.positions)
+        n_trades = len(self.exchange.trade_history)
 
-        header = (
-            f"[bold]PAPER TRADER[/bold]  |  "
-            f"Iter: {self.iteration}  |  "
-            f"Elapsed: {elapsed_min:.0f}min  |  "
-            f"Remaining: {remaining:.0f}min  |  "
-            f"Errors: {self._errors}\n"
+        # Prices line
+        prices_str = "  ".join(
+            f"{s.split('/')[0]}=${p:,.2f}" if p else f"{s.split('/')[0]}=N/A"
+            for s, p in ((s, self._current_prices.get(s)) for s in self.config.TRADING_PAIRS)
         )
-        console.print(Panel(header, border_style="dim"))
 
-        # Account table
-        acct_table = Table(
-            title="Account", box=box.ROUNDED, border_style="cyan",
-            show_header=False, padding=(0, 1),
-        )
-        acct_table.add_column("Key", style="dim", width=18)
-        acct_table.add_column("Value", width=22)
-
-        acct_table.add_row("Equity", f"[bold]${equity:.2f}[/bold]")
-        acct_table.add_row("Balance", f"${self.exchange.balance:.2f}")
-        acct_table.add_row("PnL", f"[{pnl_color}]${pnl:+.2f} ({pnl_pct:+.1f}%)[/{pnl_color}]")
-        acct_table.add_row("Free Margin", f"${self.exchange.free_margin:.2f}")
-        acct_table.add_row("Drawdown", f"{dd:.1f}%")
-        acct_table.add_row("Risk Mode", f"[{mode_color}]{mode}[/{mode_color}]")
-        acct_table.add_row("Trades", f"{len(self.exchange.trade_history)}")
-        acct_table.add_row(
-            "Win Rate",
-            f"{self.risk_mgr.win_rate * 100:.0f}% "
-            f"(PF={self.risk_mgr.profit_factor:.2f})",
-        )
-        acct_table.add_row(
-            "Streaks",
-            f"W{self.risk_mgr.state.consecutive_wins} / "
-            f"L{self.risk_mgr.state.consecutive_losses}",
-        )
-        acct_table.add_row("Fees Paid", f"${self.exchange.total_fees_paid:.2f}")
-        acct_table.add_row("Signals Checked", f"{self._signals_checked}")
-
-        # Prices table
-        price_table = Table(
-            title="Live Prices", box=box.ROUNDED, border_style="yellow",
-            show_header=True, padding=(0, 1),
-        )
-        price_table.add_column("Pair", style="bold")
-        price_table.add_column("Price", justify="right")
-        price_table.add_column("Status")
-
-        for symbol in self.config.TRADING_PAIRS:
-            price = self._current_prices.get(symbol)
-            price_str = f"${price:,.2f}" if price else "[red]N/A[/red]"
-            has_pos = any(p.symbol == symbol for p in self.exchange.positions.values())
-            status = "[cyan]IN POSITION[/cyan]" if has_pos else "[dim]watching[/dim]"
-            price_table.add_row(symbol, price_str, status)
-
-        console.print(acct_table)
         console.print()
-        console.print(price_table)
-        console.print()
+        console.print(
+            f"  [bold]{self._ts()}[/bold] "
+            f"[{pnl_color}]Equity=${equity:.2f} ({pnl:+.2f})[/{pnl_color}]  "
+            f"DD={dd:.1f}%  Mode={mode}  "
+            f"Pos={n_pos}  Trades={n_trades}  "
+            f"WR={self.risk_mgr.win_rate * 100:.0f}%  "
+            f"Iter={self.iteration}"
+        )
+        console.print(f"  [dim]{prices_str}[/dim]")
 
-        # Open Positions table
+        # Show open positions if any
         if self.exchange.positions:
-            pos_table = Table(
-                title="Open Positions", box=box.ROUNDED, border_style="magenta",
-                show_header=True, padding=(0, 1),
-            )
-            pos_table.add_column("Symbol", style="bold")
-            pos_table.add_column("Side")
-            pos_table.add_column("Entry", justify="right")
-            pos_table.add_column("Current", justify="right")
-            pos_table.add_column("Size", justify="right")
-            pos_table.add_column("Lev")
-            pos_table.add_column("uPnL", justify="right")
-            pos_table.add_column("SL", justify="right")
-            pos_table.add_column("TP", justify="right")
-            pos_table.add_column("Held")
-
             now = datetime.now(timezone.utc)
             for pid, pos in self.exchange.positions.items():
                 side_color = "green" if pos.side == PositionSide.LONG else "red"
-                pnl_color = "green" if pos.unrealized_pnl >= 0 else "red"
+                pnl_c = "green" if pos.unrealized_pnl >= 0 else "red"
                 current = self._current_prices.get(pos.symbol, 0)
-
                 try:
                     open_dt = datetime.fromisoformat(pos.open_time)
-                    held_min = (now - open_dt).total_seconds() / 60
-                    held_str = f"{held_min:.0f}m"
+                    held = f"{(now - open_dt).total_seconds() / 60:.0f}m"
                 except (ValueError, TypeError):
-                    held_str = "?"
-
-                pos_table.add_row(
-                    pos.symbol,
-                    f"[{side_color}]{pos.side.value}[/{side_color}]",
-                    f"${pos.entry_price:,.2f}",
-                    f"${current:,.2f}" if current else "?",
-                    f"${pos.size_usd:.2f}",
-                    f"{pos.leverage}x",
-                    f"[{pnl_color}]${pos.unrealized_pnl:+.2f}[/{pnl_color}]",
-                    f"${pos.stop_loss:,.2f}",
-                    f"${pos.take_profit:,.2f}",
-                    held_str,
+                    held = "?"
+                console.print(
+                    f"    [{side_color}]{pos.side.value:5}[/{side_color}] {pos.symbol} "
+                    f"entry=${pos.entry_price:,.2f} now=${current:,.2f} "
+                    f"[{pnl_c}]uPnL=${pos.unrealized_pnl:+.2f}[/{pnl_c}] "
+                    f"SL=${pos.stop_loss:,.2f} TP=${pos.take_profit:,.2f} "
+                    f"({held})"
                 )
-            console.print(pos_table)
-            console.print()
-
-        # Recent trades table
-        recent_trades = self.exchange.trade_history[-5:]
-        if recent_trades:
-            trade_table = Table(
-                title="Recent Trades", box=box.ROUNDED, border_style="blue",
-                show_header=True, padding=(0, 1),
-            )
-            trade_table.add_column("Symbol")
-            trade_table.add_column("Side")
-            trade_table.add_column("Entry", justify="right")
-            trade_table.add_column("Exit", justify="right")
-            trade_table.add_column("Net PnL", justify="right")
-            trade_table.add_column("Reason")
-
-            for t in recent_trades:
-                pnl_color = "green" if t.net_pnl > 0 else "red"
-                trade_table.add_row(
-                    t.symbol,
-                    t.side,
-                    f"${t.entry_price:,.2f}",
-                    f"${t.exit_price:,.2f}",
-                    f"[{pnl_color}]${t.net_pnl:+.2f}[/{pnl_color}]",
-                    t.close_reason,
-                )
-            console.print(trade_table)
-            console.print()
-
-        # Event log
-        if self._event_log:
-            log_text = Text()
-            for entry in self._event_log[-10:]:
-                console.print(f"  {entry}")
-            console.print()
-
-        # Progress bar to target
-        progress = min(1.0, max(0.0, (equity - self.config.STARTING_BALANCE) /
-                                     (self.config.TARGET_BALANCE - self.config.STARTING_BALANCE)))
-        bar_width = 40
-        filled = int(bar_width * progress)
-        bar_color = "green" if progress > 0 else "red"
-        bar = f"[{bar_color}]{'█' * filled}[/{bar_color}][dim]{'░' * (bar_width - filled)}[/dim]"
-        console.print(
-            f"  Target: ${self.config.STARTING_BALANCE:.0f} {bar} "
-            f"${self.config.TARGET_BALANCE:.0f}  "
-            f"({progress * 100:.1f}%)"
-        )
-        console.print(f"\n  [dim]Press Ctrl+C to stop | Auto-saves every 10 iterations[/dim]")
 
     def _print_final_report(self):
         """Print final session report and save trades."""
@@ -434,7 +329,6 @@ class PaperTrader:
         if self._current_prices:
             self.exchange.close_all_positions(self._current_prices, "SESSION_END")
         else:
-            # Try to fetch one last time
             for symbol in self.config.TRADING_PAIRS:
                 try:
                     ticker = fetch_ticker(symbol, self.ccxt_exchange)
@@ -446,12 +340,10 @@ class PaperTrader:
                 self.exchange.close_all_positions(self._current_prices, "SESSION_END")
 
         stats = self.exchange.get_performance_stats()
+        elapsed = (datetime.now(timezone.utc) - self.start_time).total_seconds() / 60
 
         console.print()
-        console.print(Panel(
-            "[bold]SESSION COMPLETE[/bold]",
-            border_style="cyan",
-        ))
+        console.print(Panel("[bold]SESSION COMPLETE[/bold]", border_style="cyan"))
 
         if isinstance(stats, dict) and "total_trades" in stats:
             report = Table(
@@ -464,28 +356,15 @@ class PaperTrader:
 
             pnl_color = "green" if stats['total_pnl'] >= 0 else "red"
             report.add_row("Total Trades", f"{stats['total_trades']}")
-            report.add_row("Winning", f"{stats['winning_trades']}")
-            report.add_row("Losing", f"{stats['losing_trades']}")
             report.add_row("Win Rate", f"{stats['win_rate']:.1f}%")
             report.add_row("Profit Factor", f"{stats['profit_factor']:.2f}")
-            report.add_row("", "")
             report.add_row("Total PnL", f"[{pnl_color}]${stats['total_pnl']:+.2f}[/{pnl_color}]")
             report.add_row("Final Equity", f"${stats['final_equity']:.2f}")
             report.add_row("Return", f"[{pnl_color}]{stats['return_pct']:+.1f}%[/{pnl_color}]")
             report.add_row("Max Drawdown", f"{stats['max_drawdown_pct']:.1f}%")
-            report.add_row("Sharpe Ratio", f"{stats['sharpe_ratio']:.2f}")
-            report.add_row("", "")
-            report.add_row("Avg Win", f"${stats['avg_win']:.2f}")
-            report.add_row("Avg Loss", f"${stats['avg_loss']:.2f}")
-            report.add_row("Largest Win", f"${stats['largest_win']:.2f}")
-            report.add_row("Largest Loss", f"${stats['largest_loss']:.2f}")
-            report.add_row("", "")
-            report.add_row("Total Fees", f"${stats['total_fees']:.2f}")
-            report.add_row("Total Funding", f"${stats['total_funding']:.2f}")
-
+            report.add_row("Fees", f"${stats['total_fees']:.2f}")
             console.print(report)
 
-            # Close reason breakdown
             reasons = {}
             for t in self.exchange.trade_history:
                 reasons[t.close_reason] = reasons.get(t.close_reason, 0) + 1
@@ -494,11 +373,7 @@ class PaperTrader:
         else:
             console.print(f"  {stats}")
 
-        # Duration
-        elapsed = (datetime.now(timezone.utc) - self.start_time).total_seconds() / 60
-        console.print(f"  Session duration: {elapsed:.1f} minutes")
-        console.print(f"  Iterations: {self.iteration}")
-        console.print(f"  Signals checked: {self._signals_checked}")
+        console.print(f"  Duration: {elapsed:.1f} min | Iterations: {self.iteration} | Signals: {self._signals_checked}")
 
         self.exchange.save_trades()
-        console.print(f"\n  Trade log saved to [bold]{self.config.TRADE_LOG_FILE}[/bold]")
+        console.print(f"  Trade log saved to [bold]{self.config.TRADE_LOG_FILE}[/bold]")
