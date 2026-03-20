@@ -13,7 +13,7 @@ Agents involved:
 Usage:
   python main.py backtest              # Backtest with REAL Binance data
   python main.py backtest --sample     # Backtest with generated sample data (offline)
-  python main.py paper [minutes]       # Live paper trading (needs network)
+  python main.py paper [minutes] [interval]  # Live paper trading (needs network)
   python main.py analyze [symbol]      # Analyze a pair (needs network)
   python main.py analyze --sample      # Analyze with sample data (offline)
   python main.py status                # Show strategy and risk parameters
@@ -71,15 +71,15 @@ def cmd_backtest():
     return results
 
 
-def cmd_paper(duration_minutes: int = 60):
-    """Run live paper trading (requires network)."""
+def cmd_paper(duration_minutes: int = 60, interval_seconds: int = 60):
+    """Run live paper trading with real Bybit data and virtual balance (no API keys)."""
     if USE_SAMPLE:
         print("\n  Paper trading with sample data is not supported.")
         print("  Use 'backtest --sample' instead for offline testing.")
         return
     from engine.paper_trader import PaperTrader
     trader = PaperTrader(cfg)
-    trader.run(duration_minutes=duration_minutes, interval_seconds=60)
+    trader.run(duration_minutes=duration_minutes, interval_seconds=interval_seconds)
 
 
 def cmd_analyze(symbol: str = "BTC/USDT"):
@@ -207,7 +207,8 @@ def main():
         cmd_backtest()
     elif command == "paper":
         minutes = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else 60
-        cmd_paper(minutes)
+        interval = int(sys.argv[3]) if len(sys.argv) > 3 and sys.argv[3].isdigit() else 60
+        cmd_paper(minutes, interval)
     elif command == "analyze":
         symbol = None
         for arg in sys.argv[2:]:
