@@ -6,8 +6,10 @@ import logging
 import time as time_mod
 from datetime import datetime, time, timedelta
 from decimal import Decimal
+from pathlib import Path
 
-from .config import BotConfig, NY_TZ, UTC_TZ, get_pair_name
+from .config import BotConfig, NY_TZ, UTC_TZ, PAIR_CONFIG, EXCLUDED_PAIRS
+from .config import RiskConfig, StrategyConfig, get_pair_name
 from .exchange import ForexFetcher
 from .models import Bias, Candle, TradeStatus
 from .risk_manager import RiskManager
@@ -190,3 +192,105 @@ class TradingEngine:
             print("\n\nShutting down...")
             print(self.account.get_summary())
             self.account.save_state()
+
+
+class MultiPairEngine:
+    """Run multiple TradingEngines in a single process (round-robin)."""
+
+    def __init__(self, balance: Decimal, interval: int = 30, state_dir: str = "state"):
+        self.interval = interval
+        self.state_dir = Path(state_dir)
+        self.state_dir.mkdir(exist_ok=True)
+        self.engines: list[TradingEngine] = []
+
+        active_pairs = [
+            t for t in sorted(PAIR_CONFIG)
+            if t not in EXCLUDED_PAIRS
+        ]
+
+        for ticker in active_pairs:
+            config = BotConfig(
+                strategy=StrategyConfig(symbol=ticker),
+                risk=RiskConfig(initial_balance=balance),
+                poll_interval_seconds=interval,
+            )
+            engine = TradingEngine(config)
+            # Load persisted state if available
+            state_file = self.state_dir / f"{ticker.replace('=X', '')}.json"
+            engine.account.load_state(state_file)
+            self.engines.append(engine)
+
+    def run(self):
+        """Run all pairs in a round-robin loop."""
+        pairs = [get_pair_name(e.config.strategy.symbol) for e in self.engines]
+        total_balance = sum(e.account.state.balance for e in self.engines)
+
+        print(f"\n{'='*60}")
+        print(f"  ORB + Session Analysis Forex Bot (Multi-Pair Paper Trading)")
+        print(f"  Pairs:   {', '.join(pairs)}")
+        print(f"  Balance: ${total_balance:.2f} ({len(self.engines)} x ${self.engines[0].account.state.balance:.2f})")
+        print(f"  Poll:    every {self.interval}s")
+        print(f"{'='*60}\n")
+
+        try:
+            while True:
+                now_str = datetime.now(NY_TZ).strftime("%H:%M:%S")
+
+                for engine in self.engines:
+                    pair = get_pair_name(engine.config.strategy.symbol)
+                    try:
+                        msg = engine.run_once()
+                        if msg:
+                            print(f"[{now_str}] {pair:7s} | {msg}")
+                    except Exception as e:
+                        logger.error(f"{pair} error: {e}", exc_info=True)
+                        print(f"[{now_str}] {pair:7s} | ERROR: {e}")
+
+                time_mod.sleep(self.interval)
+
+        except KeyboardInterrupt:
+            print("\n\nShutting down all pairs...")
+            self._print_summary()
+            self._save_all()
+
+    def _print_summary(self):
+        """Print combined summary of all pairs."""
+        total_pnl = Decimal("0")
+        total_pips = Decimal("0")
+        total_trades = 0
+
+        print(f"\n{'='*70}")
+        print("  MULTI-PAIR LIVE SESSION SUMMARY")
+        print(f"{'='*70}")
+        print(f"{'Pair':<10} {'Trades':>6} {'Wins':>5} {'Loss':>5} "
+              f"{'WR%':>6} {'Pips':>8} {'P&L':>9} {'Bal':>9}")
+        print("-" * 70)
+
+        for engine in self.engines:
+            s = engine.account.state
+            pair = get_pair_name(engine.config.strategy.symbol)
+            total_pnl += s.total_pnl
+            total_pips += s.total_pnl_pips
+            total_trades += s.total_trades
+
+            print(f"{pair:<10} {s.total_trades:>6} {s.winning_trades:>5} "
+                  f"{s.losing_trades:>5} {s.win_rate:>5.1f}% "
+                  f"{s.total_pnl_pips:>+7.1f} "
+                  f"{'${:+.2f}'.format(s.total_pnl):>9} "
+                  f"{'${:.2f}'.format(s.balance):>9}")
+
+        print("-" * 70)
+        total_balance = sum(e.account.state.balance for e in self.engines)
+        print(f"{'TOTAL':<10} {total_trades:>6} {'':>5} {'':>5} "
+              f"{'':>6} {total_pips:>+7.1f} "
+              f"{'${:+.2f}'.format(total_pnl):>9} "
+              f"{'${:.2f}'.format(total_balance):>9}")
+        print(f"{'='*70}\n")
+
+    def _save_all(self):
+        """Save state for all pairs."""
+        for engine in self.engines:
+            ticker = engine.config.strategy.symbol
+            state_file = self.state_dir / f"{ticker.replace('=X', '')}.json"
+            engine.account.save_state(state_file)
+        print(f"State saved to {self.state_dir}/")

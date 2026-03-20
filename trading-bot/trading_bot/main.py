@@ -51,6 +51,18 @@ def cmd_live(args):
     engine.run_live()
 
 
+def cmd_live_all(args):
+    """Run live paper trading on all active pairs."""
+    from .engine import MultiPairEngine
+
+    engine = MultiPairEngine(
+        balance=Decimal(args.balance),
+        interval=args.interval,
+        state_dir=args.state_dir,
+    )
+    engine.run()
+
+
 def cmd_backtest(args):
     """Run backtest on historical data."""
     from .backtester import Backtester
@@ -178,6 +190,12 @@ def main():
     live_p.add_argument("--balance", default="200", help="Initial virtual balance (USD)")
     live_p.add_argument("--interval", type=int, default=30, help="Poll interval (seconds)")
 
+    # ── live-all ──
+    la_p = subparsers.add_parser("live-all", help="Run live paper trading on all active pairs")
+    la_p.add_argument("--balance", default="200", help="Initial virtual balance per pair (USD)")
+    la_p.add_argument("--interval", type=int, default=30, help="Poll interval (seconds)")
+    la_p.add_argument("--state-dir", default="state", help="Directory for per-pair state files")
+
     # ── backtest ──
     bt_p = subparsers.add_parser("backtest", help="Backtest on real historical data")
     bt_p.add_argument("--symbol", default="EUR/USD", help="Forex pair")
@@ -203,6 +221,7 @@ def main():
 
     commands = {
         "live": cmd_live,
+        "live-all": cmd_live_all,
         "backtest": cmd_backtest,
         "backtest-all": cmd_backtest_all,
         "status": cmd_status,
