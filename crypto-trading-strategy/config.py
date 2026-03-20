@@ -28,8 +28,8 @@ MAX_POSITION_SIZE_USD = 2000.0   # Cap for risk-based sizing (actual risk contro
 # ─── Risk Management ─────────────────────────────────────────────
 DAILY_LOSS_LIMIT = 0.10         # 10% of day-start equity
 WEEKLY_LOSS_LIMIT = 0.20        # 20% of week-start equity
-MAX_DRAWDOWN = 0.20             # 20% from peak
-KILL_SWITCH_DRAWDOWN = 0.25     # 25% from peak — halt all trading
+MAX_DRAWDOWN = 0.25             # 25% from peak → defensive mode
+KILL_SWITCH_DRAWDOWN = 0.35     # 35% from peak — halt all trading
 MARGIN_RATIO_MIN = 1.5          # 150% margin ratio minimum
 
 # ─── Strategy Parameters ─────────────────────────────────────────
@@ -63,7 +63,6 @@ VOLUME_THRESHOLD = 1.3          # Volume must be > 1.3× average
 
 # ─── Trade Management ────────────────────────────────────────────
 REWARD_RISK_RATIO = 2.0         # TP at 2.0× SL distance
-TIME_STOP_HOURS = 8             # Close if no movement after 8h
 MIN_CONFIDENCE = 0.60           # Minimum signal confidence to trade (3+ confirmations)
 
 # ─── Volatility Regime Thresholds (ATR percentile) ───────────────

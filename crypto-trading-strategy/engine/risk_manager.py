@@ -222,12 +222,17 @@ class RiskManager:
 
     def can_trade(self) -> tuple[bool, str]:
         """Check if trading is allowed. Returns (allowed, reason)."""
-        if self.state.mode == RiskMode.HALTED:
-            return False, "KILL SWITCH: Trading halted due to excessive drawdown"
-
+        # Check kill switch — but allow recovery if drawdown drops back
         if self.drawdown_pct >= self.config.KILL_SWITCH_DRAWDOWN:
             self.state.mode = RiskMode.HALTED
             return False, f"KILL SWITCH: Drawdown {self.drawdown_pct:.1%} exceeds {self.config.KILL_SWITCH_DRAWDOWN:.0%}"
+
+        # Recover from halted if drawdown has decreased enough
+        if self.state.mode == RiskMode.HALTED:
+            if self.drawdown_pct < self.config.MAX_DRAWDOWN:
+                self.state.mode = RiskMode.DEFENSIVE
+            else:
+                return False, f"KILL SWITCH: Recovering (dd={self.drawdown_pct:.1%})"
 
         if not self.check_daily_limit():
             return False, f"Daily loss limit hit ({self.config.DAILY_LOSS_LIMIT:.0%})"

@@ -159,9 +159,6 @@ class VirtualExchange:
         """
         to_close = []
 
-        # Time stop: bars per hour at 15m candles = 4
-        time_stop_bars = int(getattr(self.config, 'TIME_STOP_HOURS', 4) * 4)
-
         for pid, pos in self.positions.items():
             price = prices.get(pos.symbol)
             if price is None:
@@ -193,16 +190,6 @@ class VirtualExchange:
             elif pos.side == PositionSide.SHORT and price <= pos.take_profit:
                 to_close.append((pid, pos.take_profit, "TAKE_PROFIT"))
                 continue
-
-            # Time stop: close if position stagnant for too long
-            if current_bar > 0 and pos.open_bar > 0:
-                bars_held = current_bar - pos.open_bar
-                if bars_held >= time_stop_bars:
-                    # Only close if position is near breakeven (not trending)
-                    pnl_pct = abs(pos.unrealized_pnl) / pos.margin if pos.margin > 0 else 0
-                    if pnl_pct < 0.05:  # Less than 5% move on margin
-                        to_close.append((pid, price, "TIME_STOP"))
-                        continue
 
             # Apply funding rate (every 8 hours in real exchange, simplified here)
             if funding_rates and pos.symbol in funding_rates:
