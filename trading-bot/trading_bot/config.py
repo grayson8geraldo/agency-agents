@@ -34,17 +34,22 @@ NY_SESSION = SessionWindow("New York", time(9, 30), time(17, 0))
 # Pip definitions: most pairs have pip at 4th decimal (0.0001),
 # JPY pairs have pip at 2nd decimal (0.01)
 PAIR_CONFIG = {
-    "EURUSD=X": {"pip": Decimal("0.0001"), "pip_value_per_lot": Decimal("10.00"), "name": "EUR/USD"},
-    "GBPUSD=X": {"pip": Decimal("0.0001"), "pip_value_per_lot": Decimal("10.00"), "name": "GBP/USD"},
-    "USDJPY=X": {"pip": Decimal("0.01"),   "pip_value_per_lot": Decimal("6.67"),  "name": "USD/JPY"},
-    "USDCHF=X": {"pip": Decimal("0.0001"), "pip_value_per_lot": Decimal("10.00"), "name": "USD/CHF"},
-    "AUDUSD=X": {"pip": Decimal("0.0001"), "pip_value_per_lot": Decimal("10.00"), "name": "AUD/USD"},
-    "NZDUSD=X": {"pip": Decimal("0.0001"), "pip_value_per_lot": Decimal("10.00"), "name": "NZD/USD"},
-    "USDCAD=X": {"pip": Decimal("0.0001"), "pip_value_per_lot": Decimal("10.00"), "name": "USD/CAD"},
-    "EURGBP=X": {"pip": Decimal("0.0001"), "pip_value_per_lot": Decimal("10.00"), "name": "EUR/GBP"},
-    "EURJPY=X": {"pip": Decimal("0.01"),   "pip_value_per_lot": Decimal("6.67"),  "name": "EUR/JPY"},
-    "GBPJPY=X": {"pip": Decimal("0.01"),   "pip_value_per_lot": Decimal("6.67"),  "name": "GBP/JPY"},
+    "EURUSD=X": {"pip": Decimal("0.0001"), "pip_value_per_lot": Decimal("10.00"), "name": "EUR/USD", "spread_pips": Decimal("1.0")},
+    "GBPUSD=X": {"pip": Decimal("0.0001"), "pip_value_per_lot": Decimal("10.00"), "name": "GBP/USD", "spread_pips": Decimal("1.2")},
+    "USDJPY=X": {"pip": Decimal("0.01"),   "pip_value_per_lot": Decimal("6.67"),  "name": "USD/JPY", "spread_pips": Decimal("1.0")},
+    "USDCHF=X": {"pip": Decimal("0.0001"), "pip_value_per_lot": Decimal("10.00"), "name": "USD/CHF", "spread_pips": Decimal("1.5")},
+    "AUDUSD=X": {"pip": Decimal("0.0001"), "pip_value_per_lot": Decimal("10.00"), "name": "AUD/USD", "spread_pips": Decimal("1.2")},
+    "NZDUSD=X": {"pip": Decimal("0.0001"), "pip_value_per_lot": Decimal("10.00"), "name": "NZD/USD", "spread_pips": Decimal("1.5")},
+    "USDCAD=X": {"pip": Decimal("0.0001"), "pip_value_per_lot": Decimal("10.00"), "name": "USD/CAD", "spread_pips": Decimal("1.5")},
+    "EURGBP=X": {"pip": Decimal("0.0001"), "pip_value_per_lot": Decimal("10.00"), "name": "EUR/GBP", "spread_pips": Decimal("1.5")},
+    "EURJPY=X": {"pip": Decimal("0.01"),   "pip_value_per_lot": Decimal("6.67"),  "name": "EUR/JPY", "spread_pips": Decimal("1.5")},
+    "GBPJPY=X": {"pip": Decimal("0.01"),   "pip_value_per_lot": Decimal("6.67"),  "name": "GBP/JPY", "spread_pips": Decimal("2.0")},
 }
+
+# Pairs excluded from backtest-all (underperformed in testing):
+# EUR/GBP, EUR/JPY, GBP/JPY — low win rate, negative P&L
+# USD/CAD — no signals generated
+EXCLUDED_PAIRS = {"USDCAD=X", "EURGBP=X", "EURJPY=X", "GBPJPY=X"}
 
 DEFAULT_PAIR = "EURUSD=X"
 
@@ -72,6 +77,14 @@ def get_pair_name(symbol: str) -> str:
     if cfg:
         return cfg["name"]
     return symbol.replace("=X", "")
+
+
+def get_spread_pips(symbol: str) -> Decimal:
+    """Get typical spread in pips for a forex pair."""
+    cfg = PAIR_CONFIG.get(symbol)
+    if cfg:
+        return cfg["spread_pips"]
+    return Decimal("1.5")  # Conservative default
 
 
 # ── Strategy Parameters ───────────────────────────────────────────────────

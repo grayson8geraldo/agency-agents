@@ -8,7 +8,7 @@ import sys
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-from .config import BotConfig, NY_TZ, UTC_TZ, DEFAULT_PAIR, PAIR_CONFIG
+from .config import BotConfig, NY_TZ, UTC_TZ, DEFAULT_PAIR, PAIR_CONFIG, EXCLUDED_PAIRS
 from .config import RiskConfig, StrategyConfig, get_pair_name
 
 
@@ -80,6 +80,8 @@ def cmd_backtest_all(args):
 
     results = []
     for ticker, pair_cfg in sorted(PAIR_CONFIG.items()):
+        if ticker in EXCLUDED_PAIRS:
+            continue
         pair_name = pair_cfg["name"]
         print(f"\n{'#'*60}")
         print(f"  {pair_name}")

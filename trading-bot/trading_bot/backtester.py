@@ -7,7 +7,7 @@ from datetime import date as date_type, datetime, time, timedelta
 from decimal import Decimal
 from typing import Optional
 
-from .config import BotConfig, NY_TZ, UTC_TZ, get_pair_name, get_pip_size
+from .config import BotConfig, NY_TZ, UTC_TZ, get_pair_name, get_pip_size, get_spread_pips
 from .exchange import ForexFetcher
 from .models import Bias, Candle, TradeStatus
 from .risk_manager import RiskManager
@@ -54,6 +54,8 @@ class Backtester:
         symbol = symbol or self.config.strategy.symbol
         pair_name = get_pair_name(symbol)
         pip_size = get_pip_size(symbol)
+        spread_pips = get_spread_pips(symbol)
+        spread_price = spread_pips * pip_size  # Spread in price units
         account = VirtualAccount(self.config.risk.initial_balance, symbol)
 
         # Convert to NY dates for iteration
@@ -132,7 +134,7 @@ class Backtester:
             days_with_data += 1
 
             # Run strategy
-            result = self._process_day(account, day_15m, day_5m, trade_date_ny)
+            result = self._process_day(account, day_15m, day_5m, trade_date_ny, spread_price)
             if result:
                 signals_found += 1
 
@@ -175,6 +177,7 @@ class Backtester:
         candles_15m: list[Candle],
         candles_5m: list[Candle],
         trade_date: datetime,
+        spread_price: Decimal = Decimal("0"),
     ) -> bool:
         """Process a single trading day. Returns True if a trade was taken."""
         # Session analysis
@@ -246,6 +249,19 @@ class Backtester:
             if not valid:
                 logger.debug(f"Signal rejected {trade_date.date()}: {reason}")
                 continue
+
+            # Apply spread: candle data is bid price
+            # LONG: enter at ask = bid + spread, SL/TP shift up
+            # SHORT: exit at ask = bid + spread, so effective entry is worse by spread
+            if spread_price > 0:
+                if signal.direction == Bias.LONG:
+                    signal.entry_price += spread_price
+                    signal.stop_loss += spread_price
+                    signal.take_profit += spread_price
+                else:
+                    signal.entry_price -= spread_price
+                    signal.stop_loss -= spread_price
+                    signal.take_profit -= spread_price
 
             # Calculate lot size
             lot_size = self.risk.calculate_lot_size(
