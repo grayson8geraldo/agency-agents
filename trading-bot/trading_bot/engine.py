@@ -232,9 +232,34 @@ class MultiPairEngine:
         print(f"  Poll:    every {self.interval}s")
         print(f"{'='*60}\n")
 
+        last_status: str | None = None
+
         try:
             while True:
-                now_str = datetime.now(NY_TZ).strftime("%H:%M:%S")
+                now = datetime.now(NY_TZ)
+                now_str = now.strftime("%H:%M:%S")
+
+                # Check market-wide status once (not per-pair)
+                if not is_forex_trading_day(now):
+                    status = "Forex market closed (weekend)"
+                    if status != last_status:
+                        print(f"[{now_str}] {status}. Waiting...")
+                        last_status = status
+                    time_mod.sleep(self.interval)
+                    continue
+
+                if now.time() < time(9, 45) or now.time() > time(17, 0):
+                    status = f"Outside NY trading hours ({now.strftime('%H:%M')} NY)"
+                    if status != last_status:
+                        print(f"[{now_str}] {status}. Waiting...")
+                        last_status = status
+                    time_mod.sleep(self.interval)
+                    continue
+
+                # Inside trading hours — reset status tracker
+                if last_status is not None:
+                    print(f"[{now_str}] NY session active — monitoring {len(self.engines)} pairs")
+                    last_status = None
 
                 for engine in self.engines:
                     pair = get_pair_name(engine.config.strategy.symbol)
