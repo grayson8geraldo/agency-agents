@@ -232,7 +232,8 @@ class MultiPairEngine:
         print(f"  Poll:    every {self.interval}s")
         print(f"{'='*60}\n")
 
-        last_status: str | None = None
+        # Track market state: "closed", "outside_hours", or "active"
+        last_state: str | None = None
 
         try:
             while True:
@@ -241,25 +242,23 @@ class MultiPairEngine:
 
                 # Check market-wide status once (not per-pair)
                 if not is_forex_trading_day(now):
-                    status = "Forex market closed (weekend)"
-                    if status != last_status:
-                        print(f"[{now_str}] {status}. Waiting...")
-                        last_status = status
+                    if last_state != "closed":
+                        print(f"[{now_str}] Forex market closed (weekend). Sleeping until Sunday 17:00 NY...")
+                        last_state = "closed"
                     time_mod.sleep(self.interval)
                     continue
 
                 if now.time() < time(9, 45) or now.time() > time(17, 0):
-                    status = f"Outside NY trading hours ({now.strftime('%H:%M')} NY)"
-                    if status != last_status:
-                        print(f"[{now_str}] {status}. Waiting...")
-                        last_status = status
+                    if last_state != "outside_hours":
+                        print(f"[{now_str}] Outside NY trading hours. Next session at 09:45 NY. Waiting...")
+                        last_state = "outside_hours"
                     time_mod.sleep(self.interval)
                     continue
 
-                # Inside trading hours — reset status tracker
-                if last_status is not None:
+                # Inside trading hours
+                if last_state != "active":
                     print(f"[{now_str}] NY session active — monitoring {len(self.engines)} pairs")
-                    last_status = None
+                    last_state = "active"
 
                 for engine in self.engines:
                     pair = get_pair_name(engine.config.strategy.symbol)
