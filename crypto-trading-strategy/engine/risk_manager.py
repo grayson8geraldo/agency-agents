@@ -128,7 +128,7 @@ class RiskManager:
         elif mode == RiskMode.NORMAL:
             return base_risk
         elif mode == RiskMode.DEFENSIVE:
-            return base_risk * 0.5
+            return base_risk * 0.7  # 70% of normal (was 50% — too harsh for recovery)
         return 0.0
 
     def calculate_position_size(
@@ -177,11 +177,10 @@ class RiskManager:
                 kelly_cap = kelly_risk / sl_distance_pct
                 size = min(size, kelly_cap)
 
-        # Reduce for consecutive losses
-        if self.state.consecutive_losses >= self.config.CONSECUTIVE_LOSS_DEFENSIVE:
-            size *= 0.5
-        elif self.state.consecutive_losses >= self.config.CONSECUTIVE_LOSS_REDUCE:
-            size *= 0.75
+        # Reduce for consecutive losses (only in NORMAL mode — defensive mode already reduces risk)
+        if self.state.mode == RiskMode.NORMAL:
+            if self.state.consecutive_losses >= self.config.CONSECUTIVE_LOSS_REDUCE:
+                size *= 0.75
 
         # Never more than equity × max leverage
         size = min(size, self.state.equity * leverage)
@@ -247,7 +246,7 @@ class RiskManager:
 
         if dd >= self.config.KILL_SWITCH_DRAWDOWN:
             self.state.mode = RiskMode.HALTED
-        elif dd >= 0.20 or self.state.consecutive_losses >= self.config.CONSECUTIVE_LOSS_DEFENSIVE:
+        elif dd >= self.config.MAX_DRAWDOWN or self.state.consecutive_losses >= self.config.CONSECUTIVE_LOSS_DEFENSIVE:
             self.state.mode = RiskMode.DEFENSIVE
         elif (
             self.state.equity >= self.config.STARTING_BALANCE * 1.5
@@ -258,7 +257,7 @@ class RiskManager:
         else:
             self.state.mode = RiskMode.NORMAL
 
-    def record_trade(self, pnl: float):
+    def record_trade(self, pnl: float, close_reason: str = ""):
         """Record a completed trade and update all risk state."""
         is_win = pnl > 0
         self.state.trade_history.append(TradeResult(pnl=pnl, is_win=is_win))
@@ -267,11 +266,17 @@ class RiskManager:
         self.state.daily_pnl += pnl
         self.state.weekly_pnl += pnl
 
+        # TIME_STOP near breakeven is a scratch, not a real loss — don't penalize streaks
+        is_scratch = close_reason == "TIME_STOP" and abs(pnl) < self.state.equity * 0.005
+
         if is_win:
             self.state.winning_trades += 1
             self.state.total_win_amount += pnl
             self.state.consecutive_wins += 1
             self.state.consecutive_losses = 0
+        elif is_scratch:
+            # Scratch trade: count in stats but don't affect consecutive loss streak
+            self.state.total_loss_amount += abs(pnl)
         else:
             self.state.total_loss_amount += abs(pnl)
             self.state.consecutive_losses += 1

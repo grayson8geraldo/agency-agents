@@ -97,7 +97,7 @@ class Backtester:
             while len(self.exchange.trade_history) > self.risk_mgr.state.total_trades:
                 idx = self.risk_mgr.state.total_trades
                 trade = self.exchange.trade_history[idx]
-                self.risk_mgr.record_trade(trade.net_pnl)
+                self.risk_mgr.record_trade(trade.net_pnl, trade.close_reason)
 
             # Record equity
             self.equity_curve.append({
@@ -209,7 +209,7 @@ class Backtester:
         while len(self.exchange.trade_history) > self.risk_mgr.state.total_trades:
             idx = self.risk_mgr.state.total_trades
             trade = self.exchange.trade_history[idx]
-            self.risk_mgr.record_trade(trade.net_pnl)
+            self.risk_mgr.record_trade(trade.net_pnl, trade.close_reason)
 
         # Results
         stats = self.exchange.get_performance_stats()
