@@ -59,6 +59,9 @@ class EntrySignalScanner:
         self._confirmation_candle: Candle | None = None
         self._trigger_bar_count = 0
 
+        # Zone mapper reference (set via set_zone_mapper)
+        self._zone_mapper = None
+
         # Logs
         self._setup_logs: list[SetupLog] = []
         self._current_steps: list[str] = []
@@ -125,6 +128,16 @@ class EntrySignalScanner:
     def set_max_attempts(self, max_attempts: int) -> None:
         self._max_daily_attempts = max_attempts
 
+    def set_zone_mapper(self, mapper: object) -> None:
+        """Store reference to SRZoneMapper for zone lookups at MSS price."""
+        self._zone_mapper = mapper
+
+    def _find_zone_near_price(self, price: float) -> SRZone | None:
+        """Look up whether a zone exists near the given price."""
+        if self._zone_mapper is not None and hasattr(self._zone_mapper, "is_price_near_zone"):
+            return self._zone_mapper.is_price_near_zone(price, self.zone_proximity)
+        return None
+
     # ------------------------------------------------------------------
     # Step 1: Detect strong morning impulse
     # ------------------------------------------------------------------
@@ -186,34 +199,55 @@ class EntrySignalScanner:
         if mss is None:
             return None
 
+        # Ignore if this is the same MSS we already rejected
+        if self._mss_event is not None and mss is self._mss_event:
+            return None
+
         # For uptrend impulse, we need bearish MSS at resistance
         if self._impulse_direction == "up" and mss.direction != "bearish":
             return None
         if self._impulse_direction == "down" and mss.direction != "bullish":
             return None
 
-        # MSS must be near a key zone
-        if nearby_zone is None:
-            logger.info("MSS detected but no nearby S/R zone — ignoring")
+        # MSS must have formed near a key zone.
+        # Check zone proximity using the INVALIDATION price (the extreme of the
+        # prior trend — i.e., the peak for bearish MSS, the trough for bullish).
+        # This is where the reversal started, which may be far from the current
+        # price by the time the MSS is confirmed.
+        mss_zone_price = mss.invalidation_price
+
+        # First try the explicitly passed nearby_zone (near current price)
+        zone = nearby_zone
+
+        # If current price isn't near a zone, check if the MSS origin was
+        if zone is None:
+            zone = self._find_zone_near_price(mss_zone_price)
+
+        if zone is None:
+            logger.info(
+                "MSS detected but no S/R zone near %.2f or %.2f — ignoring",
+                candle.close,
+                mss_zone_price,
+            )
             return None
 
         # Validate zone type matches
-        if self._impulse_direction == "up" and nearby_zone.zone_type != "resistance":
+        if self._impulse_direction == "up" and zone.zone_type != "resistance":
             return None
-        if self._impulse_direction == "down" and nearby_zone.zone_type != "support":
+        if self._impulse_direction == "down" and zone.zone_type != "support":
             return None
 
         self._mss_event = mss
-        self._mss_zone = nearby_zone
+        self._mss_zone = zone
         self._state = SetupState.MSS_AT_ZONE
         self._current_steps.append("step2_mss_at_zone")
         self._trigger_bar_count = 0
         logger.info(
             "STEP 2 — %s MSS at %s zone (%.2f–%.2f)",
             mss.direction.upper(),
-            nearby_zone.zone_type,
-            nearby_zone.price_low,
-            nearby_zone.price_high,
+            zone.zone_type,
+            zone.price_low,
+            zone.price_high,
         )
         return None
 
@@ -288,12 +322,19 @@ class EntrySignalScanner:
             return None
 
         # Determine entry direction and trigger level
+        # Stop-loss goes behind the NEAREST local extremum (confirmation_swing),
+        # not the trend extreme (invalidation_price). This gives tighter risk.
         if self._mss_event.direction == "bearish":
             # SHORT: trigger = low of confirmation candle
             trigger_price = self._confirmation_candle.low - 0.25  # minus 1 tick
             direction = "short"
-            stop_loss = self._mss_event.invalidation_price + 0.50  # buffer
+            # SL above the most recent LH (confirmation swing of the MSS)
+            stop_loss = self._mss_event.confirmation_swing.price + 0.50
             risk = stop_loss - trigger_price
+
+            if risk <= 0:
+                self._expire_setup("Invalid risk calculation")
+                return None
 
             if candle.low <= trigger_price:
                 entry_price = trigger_price
@@ -306,8 +347,13 @@ class EntrySignalScanner:
             # LONG: trigger = high of confirmation candle
             trigger_price = self._confirmation_candle.high + 0.25  # plus 1 tick
             direction = "long"
-            stop_loss = self._mss_event.invalidation_price - 0.50  # buffer
+            # SL below the most recent HL (confirmation swing of the MSS)
+            stop_loss = self._mss_event.confirmation_swing.price - 0.50
             risk = trigger_price - stop_loss
+
+            if risk <= 0:
+                self._expire_setup("Invalid risk calculation")
+                return None
 
             if candle.high >= trigger_price:
                 entry_price = trigger_price

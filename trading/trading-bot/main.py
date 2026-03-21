@@ -72,6 +72,7 @@ class TradingBotOrchestrator:
             zone_proximity=zones_cfg.get("zone_proximity_points", 3.0),
         )
         self.scanner.set_max_attempts(risk_cfg.get("max_attempts_per_day", 2))
+        self.scanner.set_zone_mapper(self.zones)
 
         trail_cfg = self.cfg.get("trailing", {})
         self.risk_mgr = RiskManager(

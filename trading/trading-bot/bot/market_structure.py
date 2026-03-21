@@ -30,7 +30,7 @@ class MarketStructureAnalyzer:
         self.depth_1m = depth_1m
         self.depth_15m = depth_15m
         self.min_swing_distance = min_swing_distance
-        self.lookback_swings = lookback_swings
+        self.lookback_swings = max(lookback_swings, 10)  # Need enough history for MSS
 
         # Candle buffers per timeframe
         self._candles: dict[str, list[Candle]] = {"1m": [], "15m": []}
@@ -41,10 +41,10 @@ class MarketStructureAnalyzer:
             "1m": TrendState(direction=TrendDirection.UNKNOWN),
             "15m": TrendState(direction=TrendDirection.UNKNOWN),
         }
-        # Pending (unconfirmed) MSS
-        self._pending_mss: MarketStructureShift | None = None
         # Confirmed MSS events
         self.mss_events: list[MarketStructureShift] = []
+        # Track which swing pair already triggered an MSS to prevent duplicates
+        self._last_mss_swing_pair: tuple[int, int] | None = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -119,8 +119,8 @@ class MarketStructureAnalyzer:
             self._candles[tf].clear()
             self._swings[tf].clear()
             self._trend[tf] = TrendState(direction=TrendDirection.UNKNOWN)
-        self._pending_mss = None
         self.mss_events.clear()
+        self._last_mss_swing_pair = None
 
     # ------------------------------------------------------------------
     # Swing detection
@@ -269,50 +269,64 @@ class MarketStructureAnalyzer:
         last_low = recent_lows[-1]
         prev_low = recent_lows[-2]
 
-        # Bearish MSS: price was making HH/HL, now prints LL then LH
+        # Deduplicate: don't fire MSS for the same swing pair twice
+        def _swing_pair_key(s1: SwingPoint, s2: SwingPoint) -> tuple[int, int]:
+            return (s1.bar_index, s2.bar_index)
+
+        # Bearish MSS: trend was up (HH present), now see LL + LH
         if (
             last_low.classification == SwingClassification.LL
             and last_high.classification == SwingClassification.LH
             and last_high.timestamp > last_low.timestamp  # LH comes after LL
         ):
-            # Check that prior structure was bullish
-            if prev_high.classification in (
-                SwingClassification.HH,
-                SwingClassification.INITIAL,
-            ):
-                # Invalidation is above the last HH
-                invalidation = prev_high.price
-                # Check confidence — align with 15m
-                confidence = self._mss_confidence("bearish")
-                return MarketStructureShift(
-                    direction="bearish",
-                    trigger_swing=last_low,
-                    confirmation_swing=last_high,
-                    invalidation_price=invalidation,
-                    timestamp=last_high.timestamp,
-                    confidence=confidence,
-                )
+            pair_key = _swing_pair_key(last_low, last_high)
+            if pair_key != self._last_mss_swing_pair:
+                # Find the highest recent HH for invalidation level
+                # Look at ALL highs (not just prev), because lookback may have
+                # rotated the original HH out of the [-2] position
+                prior_hh = [
+                    h for h in recent_highs
+                    if h.classification in (SwingClassification.HH, SwingClassification.INITIAL)
+                    and h.price > last_high.price
+                ]
+                if prior_hh:
+                    invalidation_swing = max(prior_hh, key=lambda s: s.price)
+                    confidence = self._mss_confidence("bearish")
+                    self._last_mss_swing_pair = pair_key
+                    return MarketStructureShift(
+                        direction="bearish",
+                        trigger_swing=last_low,
+                        confirmation_swing=last_high,
+                        invalidation_price=invalidation_swing.price,
+                        timestamp=last_high.timestamp,
+                        confidence=confidence,
+                    )
 
-        # Bullish MSS: price was making LL/LH, now prints HH then HL
+        # Bullish MSS: trend was down (LL present), now see HH + HL
         if (
             last_high.classification == SwingClassification.HH
             and last_low.classification == SwingClassification.HL
             and last_low.timestamp > last_high.timestamp  # HL comes after HH
         ):
-            if prev_low.classification in (
-                SwingClassification.LL,
-                SwingClassification.INITIAL,
-            ):
-                invalidation = prev_low.price
-                confidence = self._mss_confidence("bullish")
-                return MarketStructureShift(
-                    direction="bullish",
-                    trigger_swing=last_high,
-                    confirmation_swing=last_low,
-                    invalidation_price=invalidation,
-                    timestamp=last_low.timestamp,
-                    confidence=confidence,
-                )
+            pair_key = _swing_pair_key(last_high, last_low)
+            if pair_key != self._last_mss_swing_pair:
+                prior_ll = [
+                    lo for lo in recent_lows
+                    if lo.classification in (SwingClassification.LL, SwingClassification.INITIAL)
+                    and lo.price < last_low.price
+                ]
+                if prior_ll:
+                    invalidation_swing = min(prior_ll, key=lambda s: s.price)
+                    confidence = self._mss_confidence("bullish")
+                    self._last_mss_swing_pair = pair_key
+                    return MarketStructureShift(
+                        direction="bullish",
+                        trigger_swing=last_high,
+                        confirmation_swing=last_low,
+                        invalidation_price=invalidation_swing.price,
+                        timestamp=last_low.timestamp,
+                        confidence=confidence,
+                    )
 
         return None
 
