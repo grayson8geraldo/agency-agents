@@ -1,0 +1,51 @@
+system:
+  asset: "MES"
+  timezone: "US/Eastern"
+
+session:
+  trading_start: "09:30"
+  new_setup_cutoff: "11:00"
+  trading_end: "11:30"
+  force_close: "13:00"
+
+risk:
+  risk_per_trade_dollars: 100
+  risk_reward_minimum: 3.0
+  max_entries_per_day: 3
+  max_attempts_per_day: 2
+  max_consecutive_loss_days: 3
+  max_position_size: 1
+
+structure:
+  zigzag_depth_1m: 3
+  zigzag_depth_15m: 2
+  min_swing_distance: 2.0
+  impulse_min_points: 8.0
+  lookback_swings: 6
+
+entry:
+  confirmation_candle_body_pct: 0.60
+  confirmation_candle_min_range: 3.0
+  trigger_expiry_bars: 5
+  max_trigger_distance: 5.0
+  confirmation_timeout_bars: 10
+
+zones:
+  max_active_zones: 10
+  zone_proximity_points: 3.0
+  stale_zone_distance: 50.0
+  min_zone_width: 1.0
+  max_zone_width: 6.0
+
+trailing:
+  breakeven_r_threshold: 1.0
+  aggressive_trail_r_threshold: 2.0
+  parabolic_candle_count: 3
+  zone_stall_timeout_bars: 3
+  stop_buffer_ticks: 2
+
+tick:
+  es_tick_size: 0.25
+  es_tick_value: 12.50
+  mes_tick_size: 0.25
+  mes_tick_value: 1.25
