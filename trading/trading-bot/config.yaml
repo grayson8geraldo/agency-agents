@@ -49,3 +49,8 @@ tick:
   es_tick_value: 12.50
   mes_tick_size: 0.25
   mes_tick_value: 1.25
+
+paper:
+  initial_balance: 200.0
+  poll_interval_seconds: 60
+  state_file: "paper_account_state.json"
