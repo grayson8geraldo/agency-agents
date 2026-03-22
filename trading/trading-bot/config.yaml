@@ -54,3 +54,8 @@ paper:
   initial_balance: 200.0
   poll_interval_seconds: 60
   state_file: "paper_account_state.json"
+  data_provider: "polygon"        # "polygon" (рекомендуется) или "yfinance" (бесплатный fallback)
+
+polygon:
+  api_key: ""                     # Polygon.io API key — получить на https://polygon.io (бесплатно)
+                                  # Или установить через env: POLYGON_API_KEY=ваш_ключ

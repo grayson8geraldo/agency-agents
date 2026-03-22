@@ -274,7 +274,7 @@ class TradingBotOrchestrator:
         Usage:
             python main.py --mode paper --balance 200
         """
-        from bot.live_feed import LiveFeed
+        from bot.live_feed import create_live_feed
         from bot.paper_account import PaperAccount
 
         asset = self.cfg.get("system", {}).get("asset", "MES")
@@ -288,8 +288,17 @@ class TradingBotOrchestrator:
         )
         self._paper_account = account
 
-        # --- Initialize live feed ---
-        feed = LiveFeed(asset=asset, poll_interval=poll_interval)
+        # --- Initialize live feed (Polygon.io or yfinance) ---
+        polygon_cfg = self.cfg.get("polygon", {})
+        provider = paper_cfg.get("data_provider", "polygon")
+        api_key = polygon_cfg.get("api_key") or None
+
+        feed = create_live_feed(
+            provider=provider,
+            asset=asset,
+            poll_interval=poll_interval,
+            api_key=api_key,
+        )
 
         # --- Graceful shutdown ---
         shutdown_requested = False
