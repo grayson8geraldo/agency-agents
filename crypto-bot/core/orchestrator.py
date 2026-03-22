@@ -11,18 +11,18 @@ from datetime import datetime, timezone
 
 import structlog
 
-from ..config import BotConfig
-from ..models import (
+from config import BotConfig
+from models import (
     Bias,
     Candle,
     Position,
     PositionStatus,
     TradingState,
 )
-from .htf_structure import HTFStructureAnalyzer
-from .ltf_execution import LTFExecutionEngine
-from .mtf_zones import MTFZoneMapper
-from .risk_manager import RiskManager
+from core.htf_structure import HTFStructureAnalyzer
+from core.ltf_execution import LTFExecutionEngine
+from core.mtf_zones import MTFZoneMapper
+from core.risk_manager import RiskManager
 
 logger = structlog.get_logger(__name__)
 

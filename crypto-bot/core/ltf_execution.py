@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import structlog
 
-from ..models import (
+from models import (
     Bias,
     Candle,
     EntrySignal,

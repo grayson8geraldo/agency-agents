@@ -12,11 +12,11 @@ import time
 
 import structlog
 
-from .config import BotConfig
-from .core.orchestrator import TradeOrchestrator
-from .exchange.connector import ExchangeConnector
-from .models import PositionStatus, TradingState
-from .utils.logging import setup_logging
+from config import BotConfig
+from core.orchestrator import TradeOrchestrator
+from exchange.connector import ExchangeConnector
+from models import PositionStatus, TradingState
+from utils.logging import setup_logging
 
 logger = structlog.get_logger(__name__)
 

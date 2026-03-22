@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 
 import structlog
 
-from ..models import (
+from models import (
     Bias,
     EntrySignal,
     FairValueGap,

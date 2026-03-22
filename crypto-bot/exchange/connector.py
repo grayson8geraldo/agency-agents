@@ -14,8 +14,8 @@ from typing import Any
 import ccxt
 import structlog
 
-from ..config import BotConfig
-from ..models import Bias, Candle, Position
+from config import BotConfig
+from models import Bias, Candle, Position
 
 logger = structlog.get_logger(__name__)
 
