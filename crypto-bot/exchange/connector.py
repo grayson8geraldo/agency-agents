@@ -2,6 +2,8 @@
 
 Handles fetching OHLCV data and placing/managing orders.
 Supports both live and paper trading modes.
+Paper mode connects to the exchange read-only for real market data
+but simulates orders and tracks a virtual balance.
 """
 
 from __future__ import annotations
@@ -25,12 +27,26 @@ class ExchangeConnector:
         self.config = config
         self.symbol = config.symbol
         self._paper = config.trading_mode == "paper"
+        self._paper_balance = config.paper_balance
+        self._paper_orders: list[dict[str, Any]] = []
+
+        # Always connect to exchange for real market data
+        exchange_class = getattr(ccxt, config.exchange.exchange_id)
 
         if self._paper:
-            logger.info("exchange.paper_mode")
-            self._exchange = None
+            # Read-only connection — no API keys needed
+            self._exchange = exchange_class(
+                {
+                    "enableRateLimit": True,
+                    "options": {"defaultType": "swap"},
+                }
+            )
+            logger.info(
+                "exchange.paper_mode",
+                balance=self._paper_balance,
+                exchange=config.exchange.exchange_id,
+            )
         else:
-            exchange_class = getattr(ccxt, config.exchange.exchange_id)
             self._exchange = exchange_class(
                 {
                     "apiKey": config.exchange.api_key,
@@ -77,10 +93,7 @@ class ExchangeConnector:
     def get_balance(self) -> float:
         """Get available USDT balance."""
         if self._paper:
-            return 1000.0  # Default paper balance
-
-        if self._exchange is None:
-            return 0.0
+            return self._paper_balance
 
         try:
             balance = self._exchange.fetch_balance()
@@ -88,6 +101,12 @@ class ExchangeConnector:
         except ccxt.BaseError as e:
             logger.error("exchange.balance_error", error=str(e))
             return 0.0
+
+    def update_paper_balance(self, pnl: float) -> float:
+        """Update virtual paper balance after a trade closes. Returns new balance."""
+        self._paper_balance += pnl
+        logger.info("exchange.paper_balance_update", pnl=pnl, balance=self._paper_balance)
+        return self._paper_balance
 
     def place_limit_order(self, position: Position) -> dict[str, Any] | None:
         """Place a limit order for the given position."""
@@ -149,9 +168,6 @@ class ExchangeConnector:
 
     def get_current_price(self) -> float | None:
         """Get the latest price for the symbol."""
-        if self._exchange is None:
-            return None
-
         try:
             ticker = self._exchange.fetch_ticker(self.symbol)
             return float(ticker["last"])

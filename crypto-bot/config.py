@@ -70,6 +70,7 @@ class ExecutionConfig:
 class BotConfig:
     symbol: str = field(default_factory=lambda: _env("SYMBOL", "BTC/USDT:USDT"))
     trading_mode: str = field(default_factory=lambda: _env("TRADING_MODE", "paper"))
+    paper_balance: float = field(default_factory=lambda: _float("PAPER_BALANCE", 200.0))
     log_level: str = field(default_factory=lambda: _env("LOG_LEVEL", "INFO"))
     exchange: ExchangeConfig = field(default_factory=ExchangeConfig)
     timeframes: TimeframeConfig = field(default_factory=TimeframeConfig)

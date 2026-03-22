@@ -80,12 +80,24 @@ def main() -> None:
             # ── LTF tick (every cycle) ──
             ltf_candles = exchange.fetch_candles(config.timeframes.ltf, limit=200)
             if ltf_candles:
+                # Remember position before tick to detect exits
+                had_position = orchestrator.active_position
                 position = orchestrator.tick_ltf(ltf_candles, balance)
 
                 if position is not None and position.status == PositionStatus.PENDING:
                     order = exchange.place_limit_order(position)
                     if order:
                         orchestrator.risk.on_position_filled(position)
+
+                # Sync paper balance when a position was closed
+                if (
+                    had_position is not None
+                    and orchestrator.active_position is None
+                    and had_position.pnl != 0
+                    and exchange._paper
+                ):
+                    exchange.update_paper_balance(had_position.pnl)
+                    balance = exchange.get_balance()
 
             # ── Status log ──
             _log_status(orchestrator, balance)
