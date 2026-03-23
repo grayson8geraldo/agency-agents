@@ -395,6 +395,20 @@ def generate_signal(
     else:  # FVG — SL at 50%
         raw_sl = zone.midpoint
 
+    # Validate SL is on the correct side of entry
+    if signal_direction == Bias.LONG and raw_sl >= entry_price:
+        logger.warning(
+            f"SKIP: SL {raw_sl:.5f} >= entry {entry_price:.5f} for LONG — "
+            f"entry below zone, invalid setup"
+        )
+        return None
+    if signal_direction == Bias.SHORT and raw_sl <= entry_price:
+        logger.warning(
+            f"SKIP: SL {raw_sl:.5f} <= entry {entry_price:.5f} for SHORT — "
+            f"entry above zone, invalid setup"
+        )
+        return None
+
     # Preliminary TP at R:R 2.0
     risk = abs(entry_price - raw_sl)
     if signal_direction == Bias.LONG:
