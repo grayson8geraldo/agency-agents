@@ -1,0 +1,27 @@
+{
+  "symbol": "EUR/USD",
+  "data_source": "twelve_data",
+  "twelve_data_key": "9911a21d5c434ca693d49112ef6b4cda",
+  "oanda_token": "",
+  "account": {
+    "initial_balance_eur": 200.0,
+    "risk_per_trade_pct": 1.0,
+    "leverage": 30,
+    "state_file": "paper_account.json"
+  },
+  "pipeline": {
+    "swing_lookback": 2,
+    "min_ob_candles": 3,
+    "min_impulse_ratio": 1.5,
+    "sl_buffer_pips": 3.0,
+    "min_rr": 2.0,
+    "m1_choch_timeout_minutes": 120
+  },
+  "schedule": {
+    "check_interval_minutes": 5,
+    "asia_session_start_est": "20:00",
+    "asia_session_end_est": "00:00",
+    "sweep_cutoff_est": "05:00",
+    "daily_cutoff_est": "16:00"
+  }
+}

@@ -15,6 +15,7 @@ import time
 import urllib.request
 import urllib.error
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Optional
 
 from loguru import logger
@@ -62,12 +63,23 @@ class ForexDataProvider:
 
         Args:
             oanda_token: OANDA demo account API token (free at oanda.com/demo-account).
-                         If None, tries environment variable OANDA_API_TOKEN.
-            twelve_data_key: Twelve Data API key as fallback. If None, tries TWELVE_DATA_KEY.
+                         If None, tries config.json, then env var OANDA_API_TOKEN.
+            twelve_data_key: Twelve Data API key as fallback. If None, tries config.json, then TWELVE_DATA_KEY.
         """
         import os
-        self.oanda_token = oanda_token or os.environ.get("OANDA_API_TOKEN", "")
-        self.twelve_data_key = twelve_data_key or os.environ.get("TWELVE_DATA_KEY", "")
+        config = self._load_config()
+        self.oanda_token = oanda_token or os.environ.get("OANDA_API_TOKEN", "") or config.get("oanda_token", "")
+        self.twelve_data_key = twelve_data_key or os.environ.get("TWELVE_DATA_KEY", "") or config.get("twelve_data_key", "")
+
+    @staticmethod
+    def _load_config() -> dict:
+        """Try to load config.json from the bot directory."""
+        for path in ("config.json", "trading/bot/config.json"):
+            try:
+                return json.loads(Path(path).read_text())
+            except (FileNotFoundError, json.JSONDecodeError):
+                continue
+        return {}
 
     def fetch_candles(
         self,
