@@ -106,8 +106,8 @@ class StrategyConfig:
 
 @dataclass
 class RiskConfig:
-    initial_balance: Decimal = Decimal("200.00")  # USD
-    risk_per_trade_pct: Decimal = Decimal("0.01")     # 1% per trade
+    initial_balance: Decimal = Decimal("5000.00")  # USD
+    risk_per_trade_pct: Decimal = Decimal("0.01")     # 1% per trade ($50 at $5000)
     max_risk_per_trade_pct: Decimal = Decimal("0.02")  # 2% hard cap
     min_risk_reward: Decimal = Decimal("1.5")
     max_risk_reward: Decimal = Decimal("2.2")
@@ -119,7 +119,7 @@ class RiskConfig:
     max_open_positions: int = 1                         # One trade at a time
     # Forex lot sizing: with $200 we use micro lots (0.01 lot = 1000 units)
     min_lot_size: Decimal = Decimal("0.01")            # Micro lot
-    max_lot_size: Decimal = Decimal("0.10")            # Max for small account
+    max_lot_size: Decimal = Decimal("1.00")            # Max lot size
 
 
 # ── Bot Configuration ─────────────────────────────────────────────────────
