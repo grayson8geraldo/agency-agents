@@ -202,10 +202,9 @@ class ForexDataProvider:
         if interval is None:
             raise ValueError(f"Unsupported timeframe for Twelve Data: {timeframe}")
 
-        pair = symbol.replace("/", "")
         url = (
             f"https://api.twelvedata.com/time_series"
-            f"?symbol={pair}&interval={interval}&outputsize={count}"
+            f"?symbol={symbol}&interval={interval}&outputsize={count}"
             f"&apikey={self.twelve_data_key}"
         )
 
