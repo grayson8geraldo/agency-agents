@@ -74,7 +74,7 @@ class OrderBlockExecutor:
             return OrderSignal(action="REJECTED_NO_OB")
 
         # Calculate entry and stop-loss
-        pip_size = 0.0001  # For forex majors; adjust for JPY pairs or crypto
+        pip_size = 0.0001  # For forex majors (EUR/USD, GBP/USD); use 0.01 for JPY pairs
         buffer = self.sl_buffer_pips * pip_size
 
         if bias == Bias.BULLISH:

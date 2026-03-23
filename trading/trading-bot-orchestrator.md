@@ -240,7 +240,7 @@ Weekly Summary Template:
 ```
 
 ## Integration Notes
-- This orchestrator is designed to work with any instrument (forex, crypto, indices)
+- This orchestrator is designed for forex pairs (EUR/USD, GBP/USD, USD/JPY, etc.)
 - Data feeds should provide M1, M5, and M15 OHLCV in real-time
 - All times are in EST (UTC-5) — adjust for DST when applicable
 - The pipeline can be extended with additional filters (news events, killzones) without changing the core 5-step flow

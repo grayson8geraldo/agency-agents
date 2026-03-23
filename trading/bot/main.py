@@ -191,10 +191,20 @@ def run_demo() -> None:
 
 
 def run_live(exchange_id: str, symbol: str) -> None:
-    """Run the pipeline with live data from a CCXT exchange.
+    """Run the pipeline with live forex data via a CCXT-compatible broker.
 
-    Requires ccxt to be installed: pip install ccxt
+    Supported forex brokers (via ccxt):
+        - oanda       (OANDA — requires API key + account ID)
+        - fxcm        (FXCM — requires API key)
+        - currencycom (Currency.com — requires API key + secret)
+
+    Set credentials via environment variables:
+        EXCHANGE_API_KEY, EXCHANGE_SECRET, EXCHANGE_ACCOUNT_ID (OANDA)
+
+    Requires ccxt: pip install ccxt
     """
+    import os
+
     try:
         import ccxt
     except ImportError:
@@ -203,11 +213,25 @@ def run_live(exchange_id: str, symbol: str) -> None:
 
     exchange_class = getattr(ccxt, exchange_id, None)
     if exchange_class is None:
-        logger.error("Unknown exchange: {}", exchange_id)
+        logger.error("Unknown exchange/broker: {}", exchange_id)
+        logger.info("Popular forex brokers: oanda, fxcm, currencycom")
         sys.exit(1)
 
-    exchange = exchange_class({"enableRateLimit": True})
-    logger.info("Fetching data from {} for {}...", exchange_id, symbol)
+    config: dict = {"enableRateLimit": True}
+
+    api_key = os.environ.get("EXCHANGE_API_KEY")
+    secret = os.environ.get("EXCHANGE_SECRET")
+    account_id = os.environ.get("EXCHANGE_ACCOUNT_ID")
+
+    if api_key:
+        config["apiKey"] = api_key
+    if secret:
+        config["secret"] = secret
+    if account_id:
+        config["uid"] = account_id  # OANDA uses uid for account ID
+
+    exchange = exchange_class(config)
+    logger.info("Connecting to {} for {} ...", exchange_id.upper(), symbol)
 
     def fetch_candles(timeframe: str, limit: int) -> list[Candle]:
         ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
@@ -245,8 +269,8 @@ def main() -> None:
         default="demo",
         help="Run mode: 'demo' with synthetic data or 'live' with exchange data",
     )
-    parser.add_argument("--exchange", default="binance", help="CCXT exchange ID (for live mode)")
-    parser.add_argument("--symbol", default="BTC/USDT", help="Trading pair (for live mode)")
+    parser.add_argument("--exchange", default="oanda", help="CCXT exchange ID (e.g. oanda, fxcm, currencycom)")
+    parser.add_argument("--symbol", default="EUR/USD", help="Forex pair (e.g. EUR/USD, GBP/USD, USD/JPY)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose logging")
 
     args = parser.parse_args()
