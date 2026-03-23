@@ -106,9 +106,9 @@ class StrategyConfig:
 
 @dataclass
 class RiskConfig:
-    initial_balance: Decimal = Decimal("2000.00")  # USD
-    risk_per_trade_pct: Decimal = Decimal("0.01")     # 1% per trade ($20 at $2000)
-    max_risk_per_trade_pct: Decimal = Decimal("0.02")  # 2% hard cap
+    initial_balance: Decimal = Decimal("200.00")  # USD
+    risk_per_trade_pct: Decimal = Decimal("0.10")     # 10% per trade ($20 at $200)
+    max_risk_per_trade_pct: Decimal = Decimal("0.15")  # 15% hard cap
     min_risk_reward: Decimal = Decimal("1.5")
     max_risk_reward: Decimal = Decimal("2.2")
     default_risk_reward: Decimal = Decimal("2.0")
