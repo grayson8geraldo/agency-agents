@@ -12,7 +12,7 @@ from .config import BotConfig, NY_TZ, UTC_TZ, DEFAULT_PAIR, PAIR_CONFIG, EXCLUDE
 from .config import RiskConfig, StrategyConfig, get_pair_name
 
 
-def setup_logging(level: str = "INFO"):
+def setup_logging(level: str = "INFO", quiet: bool = False):
     logging.basicConfig(
         level=getattr(logging, level),
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -21,6 +21,12 @@ def setup_logging(level: str = "INFO"):
     logging.getLogger("yfinance").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("peewee").setLevel(logging.WARNING)
+    if quiet:
+        # Suppress repetitive INFO from internal modules in live mode
+        logging.getLogger("trading_bot.exchange").setLevel(logging.WARNING)
+        logging.getLogger("trading_bot.strategy").setLevel(logging.WARNING)
+        logging.getLogger("trading_bot.sessions").setLevel(logging.WARNING)
+        logging.getLogger("trading_bot.virtual_account").setLevel(logging.WARNING)
 
 
 def resolve_symbol(pair: str) -> str:
@@ -217,7 +223,8 @@ def main():
     subparsers.add_parser("pairs", help="List available forex pairs")
 
     args = parser.parse_args()
-    setup_logging(args.log_level)
+    quiet = args.command in ("live", "live-all")
+    setup_logging(args.log_level, quiet=quiet)
 
     commands = {
         "live": cmd_live,
