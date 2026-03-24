@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Optional
@@ -63,20 +64,27 @@ class ForexFetcher:
         ticker = yf.Ticker(symbol)
         pair_name = get_pair_name(symbol)
 
-        try:
-            if start and end:
-                df = ticker.history(
-                    interval=interval,
-                    start=start.strftime("%Y-%m-%d"),
-                    end=(end + timedelta(days=1)).strftime("%Y-%m-%d"),
-                )
-            elif period:
-                df = ticker.history(interval=interval, period=period)
-            else:
-                df = ticker.history(interval=interval, period="5d")
-        except Exception as e:
-            logger.error(f"Failed to fetch {pair_name} {timeframe}: {e}")
-            return []
+        df = None
+        for attempt in range(3):
+            try:
+                if start and end:
+                    df = ticker.history(
+                        interval=interval,
+                        start=start.strftime("%Y-%m-%d"),
+                        end=(end + timedelta(days=1)).strftime("%Y-%m-%d"),
+                    )
+                elif period:
+                    df = ticker.history(interval=interval, period=period)
+                else:
+                    df = ticker.history(interval=interval, period="5d")
+                break
+            except Exception as e:
+                if attempt < 2:
+                    logger.warning(f"Retry {attempt + 1}/3 for {pair_name} {timeframe}: {e}")
+                    time.sleep(2 ** attempt)
+                else:
+                    logger.error(f"Failed to fetch {pair_name} {timeframe} after 3 attempts: {e}")
+                    return []
 
         if df.empty:
             logger.warning(f"No data returned for {pair_name} {timeframe}")
