@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, time, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from loguru import logger
 
@@ -15,8 +16,8 @@ from trading.bot.models import (
     SweepStatus,
 )
 
-# EST = UTC-5
-EST = timezone(timedelta(hours=-5))
+# Use proper NY timezone (handles EST/EDT automatically)
+NY_TZ = ZoneInfo("America/New_York")
 
 
 class SessionLiquidityTracker:
@@ -78,15 +79,19 @@ class SessionLiquidityTracker:
                 status=SweepStatus.WAITING, daily_bias=bias, asia_session=session
             )
 
+        # JPY pairs have prices > 10; use 0.01 pip size for them
+        pip_size = 0.01 if session.high > 10 else 0.0001
+
         for candle in post_session:
             if self._is_past_cutoff(candle.time):
                 break
 
             if bias == Bias.BULLISH and candle.low < session.low:
                 depth = session.low - candle.low
+                depth_pips = round(depth / pip_size, 1)
                 logger.info(
                     "SWEEP detected — Asian LOW {} taken at {} (depth: {:.1f} pips)",
-                    session.low, candle.time, depth * 10000,
+                    session.low, candle.time, depth_pips,
                 )
                 return SweepSignal(
                     status=SweepStatus.SWEPT,
@@ -95,14 +100,15 @@ class SessionLiquidityTracker:
                     sweep_side="LOW",
                     sweep_price=candle.low,
                     sweep_time=candle.time,
-                    depth_pips=round(depth * 10000, 1),
+                    depth_pips=depth_pips,
                 )
 
             if bias == Bias.BEARISH and candle.high > session.high:
                 depth = candle.high - session.high
+                depth_pips = round(depth / pip_size, 1)
                 logger.info(
                     "SWEEP detected — Asian HIGH {} taken at {} (depth: {:.1f} pips)",
-                    session.high, candle.time, depth * 10000,
+                    session.high, candle.time, depth_pips,
                 )
                 return SweepSignal(
                     status=SweepStatus.SWEPT,
@@ -111,7 +117,7 @@ class SessionLiquidityTracker:
                     sweep_side="HIGH",
                     sweep_price=candle.high,
                     sweep_time=candle.time,
-                    depth_pips=round(depth * 10000, 1),
+                    depth_pips=depth_pips,
                 )
 
         # Check if we've passed the cutoff
@@ -148,17 +154,28 @@ class SessionLiquidityTracker:
 
     # -- Internal Helpers --
 
-    def _filter_asia_candles(self, candles: list[Candle]) -> list[Candle]:
-        """Return candles that fall within the 20:00-00:00 EST window."""
-        result = []
-        for c in candles:
-            est_time = c.time.astimezone(EST) if c.time.tzinfo else c.time.replace(tzinfo=timezone.utc).astimezone(EST)
-            hour = est_time.hour
+    def _to_ny(self, dt: datetime) -> datetime:
+        """Convert a datetime to New York time (handles EST/EDT)."""
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(NY_TZ)
 
-            # 20:00 - 23:59 EST
-            if 20 <= hour <= 23:
-                result.append(c)
-        return result
+    def _filter_asia_candles(self, candles: list[Candle]) -> list[Candle]:
+        """Return candles from the MOST RECENT 20:00-00:00 NY session only."""
+        # Tag each candle with its NY hour
+        tagged: list[tuple[datetime, Candle]] = []
+        for c in candles:
+            ny_time = self._to_ny(c.time)
+            if 20 <= ny_time.hour <= 23:
+                tagged.append((ny_time, c))
+
+        if not tagged:
+            return []
+
+        # Only keep candles from the most recent Asian session date
+        # Asian session date = the NY calendar date of the 20:00 candle
+        latest_date = tagged[-1][0].date()
+        return [c for ny_t, c in tagged if ny_t.date() == latest_date]
 
     def _filter_post_session_candles(
         self, candles: list[Candle], session_end: datetime
@@ -167,6 +184,6 @@ class SessionLiquidityTracker:
         return [c for c in candles if c.time > session_end]
 
     def _is_past_cutoff(self, dt: datetime) -> bool:
-        """Check if a timestamp is past the 05:00 EST sweep monitoring cutoff."""
-        est_time = dt.astimezone(EST) if dt.tzinfo else dt.replace(tzinfo=timezone.utc).astimezone(EST)
-        return est_time.hour >= 5 and est_time.hour < 20
+        """Check if a timestamp is past the 05:00 NY sweep monitoring cutoff."""
+        ny_time = self._to_ny(dt)
+        return ny_time.hour >= 5 and ny_time.hour < 20

@@ -59,7 +59,6 @@ class OrderBlockExecutor:
         # Find candles up to and including the M5 candle that contains the CHoCH.
         # The impulse move that caused CHoCH on M1 may extend a few M5 candles past
         # the exact CHoCH timestamp, so include candles up to 10 min after.
-        from datetime import timedelta
         cutoff = choch_time + timedelta(minutes=10)
         relevant = [c for c in candles_m5 if c.time <= cutoff]
         if len(relevant) < 5:
@@ -82,11 +81,11 @@ class OrderBlockExecutor:
         if bias == Bias.BULLISH:
             # BUY LIMIT at OB upper; SL below OB
             entry = ob.upper
-            stop_loss = ob.lower - buffer
+            stop_loss = round(ob.lower - buffer, 5)
         else:
             # SELL LIMIT at OB lower; SL above OB
             entry = ob.lower
-            stop_loss = ob.upper + buffer
+            stop_loss = round(ob.upper + buffer, 5)
 
         risk_pips = abs(entry - stop_loss) / pip_size
 

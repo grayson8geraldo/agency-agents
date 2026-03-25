@@ -164,9 +164,7 @@ class ForexDataProvider:
                 continue
             mid = c["mid"]
             candles.append(Candle(
-                time=datetime.fromisoformat(c["time"].replace("000Z", "+00:00").rstrip("Z") + "+00:00")
-                     if "Z" in c["time"]
-                     else datetime.fromisoformat(c["time"]),
+                time=self._parse_oanda_time(c["time"]),
                 open=float(mid["o"]),
                 high=float(mid["h"]),
                 low=float(mid["l"]),
@@ -225,6 +223,19 @@ class ForexDataProvider:
 
         logger.info("Twelve Data: fetched {} {} candles for {}", len(candles), timeframe, symbol)
         return candles
+
+    @staticmethod
+    def _parse_oanda_time(ts: str) -> datetime:
+        """Parse OANDA timestamp format (e.g. '2024-01-16T00:00:00.000000000Z')."""
+        if ts.endswith("Z"):
+            # Strip trailing Z, truncate nanoseconds to microseconds for fromisoformat
+            ts = ts[:-1]
+            # OANDA gives nanosecond precision (9 digits); Python supports up to 6
+            if "." in ts:
+                base, frac = ts.rsplit(".", 1)
+                ts = f"{base}.{frac[:6]}"
+            ts += "+00:00"
+        return datetime.fromisoformat(ts)
 
     # -- HTTP --
 

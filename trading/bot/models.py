@@ -126,6 +126,7 @@ class SweepSignal:
     sweep_price: Optional[float] = None
     sweep_time: Optional[datetime] = None
     depth_pips: Optional[float] = None
+    notes: str = ""
 
 
 @dataclass
@@ -139,6 +140,7 @@ class ConfirmationSignal:
     post_sweep_extreme: Optional[float] = None
     swing_points_tracked: int = 0
     time_since_sweep_minutes: Optional[float] = None
+    notes: str = ""
 
 
 @dataclass

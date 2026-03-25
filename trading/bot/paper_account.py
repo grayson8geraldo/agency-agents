@@ -187,10 +187,11 @@ class PaperAccount:
                 return self._close_position(position, position.stop_loss, "SL_HIT")
 
         # Update unrealized P&L
+        pip_size = 0.01 if position.entry_price > 10 else 0.0001
         if position.direction == "BUY":
-            pips = (current_price - position.entry_price) / 0.0001
+            pips = (current_price - position.entry_price) / pip_size
         else:
-            pips = (position.entry_price - current_price) / 0.0001
+            pips = (position.entry_price - current_price) / pip_size
         unrealized = pips * position.lot_size * 10.0
         self.equity = self.balance + unrealized
 
@@ -202,10 +203,11 @@ class PaperAccount:
         position.exit_price = exit_price
         position.closed_at = datetime.now(timezone.utc)
 
+        pip_size = 0.01 if position.entry_price > 10 else 0.0001
         if position.direction == "BUY":
-            position.pnl_pips = round((exit_price - position.entry_price) / 0.0001, 1)
+            position.pnl_pips = round((exit_price - position.entry_price) / pip_size, 1)
         else:
-            position.pnl_pips = round((position.entry_price - exit_price) / 0.0001, 1)
+            position.pnl_pips = round((position.entry_price - exit_price) / pip_size, 1)
 
         position.pnl_eur = round(position.pnl_pips * position.lot_size * 10.0, 2)
         self.balance = round(self.balance + position.pnl_eur, 2)

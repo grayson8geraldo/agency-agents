@@ -30,8 +30,13 @@ class LiquidityTargetManager:
         swing_lookback: int = 3,
     ) -> None:
         self.min_rr = min_rr
-        self.equal_level_tolerance = equal_level_tolerance_pips * 0.0001
+        self.equal_level_tolerance_pips = equal_level_tolerance_pips
         self.swing_lookback = swing_lookback
+
+    @staticmethod
+    def _pip_size(price: float) -> float:
+        """Return pip size based on price level (0.01 for JPY pairs, 0.0001 otherwise)."""
+        return 0.01 if price > 10 else 0.0001
 
     def find_targets(self, candles_m15: list[Candle], bias: Bias) -> list[LiquidityTarget]:
         """Scan M15 for liquidity targets.
@@ -43,8 +48,12 @@ class LiquidityTargetManager:
         targets: list[LiquidityTarget] = []
         swings = self._find_swing_points(candles_m15)
 
+        # Determine pip size from price level
+        ref_price = candles_m15[-1].close if candles_m15 else 1.0
+        pip_size = self._pip_size(ref_price)
+
         # 1. Equal Highs / Equal Lows
-        eq_targets = self._find_equal_levels(swings, bias)
+        eq_targets = self._find_equal_levels(swings, bias, pip_size)
         targets.extend(eq_targets)
 
         # 2. Previous Day High / Low
@@ -80,7 +89,7 @@ class LiquidityTargetManager:
             return None
 
         targets = self.find_targets(candles_m15, bias)
-        pip_size = 0.0001
+        pip_size = self._pip_size(order.entry_price)
 
         entry = order.entry_price
         sl = order.stop_loss
@@ -124,11 +133,13 @@ class LiquidityTargetManager:
 
         Goes through candles after entry to see if TP or SL was hit first.
         """
+        pip_size = self._pip_size(trade.entry)
+
         for candle in candles:
             if trade.bias == Bias.BULLISH:
                 # Check SL first (worst case)
                 if candle.low <= trade.stop_loss:
-                    pips = round(abs(trade.entry - trade.stop_loss) / 0.0001, 1)
+                    pips = round(abs(trade.entry - trade.stop_loss) / pip_size, 1)
                     return TradeOutcome(
                         result=TradeResult.LOSS,
                         entry_price=trade.entry,
@@ -138,7 +149,7 @@ class LiquidityTargetManager:
                     )
                 # Check TP
                 if candle.high >= trade.take_profit:
-                    pips = round(abs(trade.take_profit - trade.entry) / 0.0001, 1)
+                    pips = round(abs(trade.take_profit - trade.entry) / pip_size, 1)
                     return TradeOutcome(
                         result=TradeResult.WIN,
                         entry_price=trade.entry,
@@ -149,7 +160,7 @@ class LiquidityTargetManager:
                     )
             else:  # BEARISH
                 if candle.high >= trade.stop_loss:
-                    pips = round(abs(trade.stop_loss - trade.entry) / 0.0001, 1)
+                    pips = round(abs(trade.stop_loss - trade.entry) / pip_size, 1)
                     return TradeOutcome(
                         result=TradeResult.LOSS,
                         entry_price=trade.entry,
@@ -158,7 +169,7 @@ class LiquidityTargetManager:
                         notes="Stop-loss hit",
                     )
                 if candle.low <= trade.take_profit:
-                    pips = round(abs(trade.entry - trade.take_profit) / 0.0001, 1)
+                    pips = round(abs(trade.entry - trade.take_profit) / pip_size, 1)
                     return TradeOutcome(
                         result=TradeResult.WIN,
                         entry_price=trade.entry,
@@ -193,15 +204,16 @@ class LiquidityTargetManager:
 
         return swings
 
-    def _find_equal_levels(self, swings: list[SwingPoint], bias: Bias) -> list[LiquidityTarget]:
+    def _find_equal_levels(self, swings: list[SwingPoint], bias: Bias, pip_size: float = 0.0001) -> list[LiquidityTarget]:
         """Find equal highs (for bullish) or equal lows (for bearish)."""
         targets: list[LiquidityTarget] = []
+        tolerance = self.equal_level_tolerance_pips * pip_size
 
         if bias == Bias.BULLISH:
             highs = [s for s in swings if s.type == "SH"]
             for i in range(len(highs)):
                 for j in range(i + 1, len(highs)):
-                    if abs(highs[i].price - highs[j].price) <= self.equal_level_tolerance:
+                    if abs(highs[i].price - highs[j].price) <= tolerance:
                         avg_price = (highs[i].price + highs[j].price) / 2
                         targets.append(LiquidityTarget(
                             price=avg_price,
@@ -212,7 +224,7 @@ class LiquidityTargetManager:
             lows = [s for s in swings if s.type == "SL"]
             for i in range(len(lows)):
                 for j in range(i + 1, len(lows)):
-                    if abs(lows[i].price - lows[j].price) <= self.equal_level_tolerance:
+                    if abs(lows[i].price - lows[j].price) <= tolerance:
                         avg_price = (lows[i].price + lows[j].price) / 2
                         targets.append(LiquidityTarget(
                             price=avg_price,
