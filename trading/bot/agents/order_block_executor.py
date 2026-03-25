@@ -74,13 +74,17 @@ class OrderBlockExecutor:
             return OrderSignal(action="REJECTED_NO_OB")
 
         # Calculate entry and stop-loss
-        pip_size = 0.0001  # For forex majors (EUR/USD, GBP/USD); use 0.01 for JPY pairs
+        # JPY pairs have prices > 10 (e.g. 150.00) and use 0.01 pip size
+        sample_price = ob.upper
+        pip_size = 0.01 if sample_price > 10 else 0.0001
         buffer = self.sl_buffer_pips * pip_size
 
         if bias == Bias.BULLISH:
+            # BUY LIMIT at OB upper; SL below OB
             entry = ob.upper
             stop_loss = ob.lower - buffer
         else:
+            # SELL LIMIT at OB lower; SL above OB
             entry = ob.lower
             stop_loss = ob.upper + buffer
 

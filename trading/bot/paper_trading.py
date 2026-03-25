@@ -97,7 +97,8 @@ class PaperTradingRunner:
             try:
                 price_data = self.data.get_current_price(self.symbol)
                 current = price_data["mid"]
-                distance_pips = abs(current - trade.entry) / 0.0001
+                pip_size = 0.01 if current > 10 else 0.0001
+                distance_pips = abs(current - trade.entry) / pip_size
 
                 if distance_pips <= 5:
                     # Price is at the order block — "fill" the limit order
@@ -159,7 +160,7 @@ class PaperTradingRunner:
 
         candles_m15 = self.data.fetch_candles(self.symbol, "M15", count=200)
         candles_m5 = self.data.fetch_candles(self.symbol, "M5", count=100)
-        candles_m1 = self.data.fetch_candles(self.symbol, "M1", count=500)
+        candles_m1 = self.data.fetch_candles(self.symbol, "M1", count=1500)
 
         logger.info(
             "Data loaded: {} M15, {} M5, {} M1 candles",
@@ -188,10 +189,11 @@ class PaperTradingRunner:
                 self.account.print_status()
             else:
                 # Still open — show unrealized P&L
+                pip_size = 0.01 if current > 10 else 0.0001
                 if position.direction == "BUY":
-                    unrealized_pips = (current - position.entry_price) / 0.0001
+                    unrealized_pips = (current - position.entry_price) / pip_size
                 else:
-                    unrealized_pips = (position.entry_price - current) / 0.0001
+                    unrealized_pips = (position.entry_price - current) / pip_size
                 unrealized_eur = unrealized_pips * position.lot_size * 10.0
                 logger.info(
                     "Position #{} {} — unrealized: {:.1f} pips (€{:+.2f}) | SL: {} | TP: {}",
